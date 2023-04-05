@@ -1,7 +1,9 @@
 # 云崽Bot面板通用化插件.js
 
 #### 介绍
-将喵喵插件产生的面板数据适配到Gspanel，以便在Gspanel使用。
+将[喵喵插件](../../../../yoimiya-kokomi/miao-plugin)产生的面板数据适配到[Gspanel](https://github.com/monsterxcn/nonebot-plugin-gspanel)，以便在Gspanel使用。
+
+等我写完了再来整README。
 
 #### 软件架构
 软件架构说明
