@@ -1,7 +1,7 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月7日00:06:18
+2023年4月8日00:07:30
 //*/
 
 let MiaoPath = "data/UserData/"
@@ -105,24 +105,13 @@ export class MiaoToGspanel extends plugin {
   }
   async M2G(uid) {
     //调用前已经判断过该uid一定有面板数据，并且所有路径无误，所以接下来就是修改面板数据以适配Gspanel
+    //修正面板数据，在对应目录生成文件。返回值表示处理结果(true：转换成功，false：转换失败)
     let Miao = JSON.parse(fs.readFileSync(MiaoPath.concat(`${uid}.json`)))
     let char_data = JSON.parse(fs.readFileSync(GspanelPath.concat("../char-data.json")))
-
-    //TODO 修正面板数据，在对应目录生成文件。返回值表示处理结果(true：转换成功，false：转换失败)
     let Gspanel = JSON.parse(`{"avatars": [],"next":${Miao._profile}}`)
     for (let i in Miao.avatars) {
-      let id = Miao.avatars[i].id
-      let char = JSON.parse(`{
-"id":${id},
-"rarity":4,
-"name":"${Miao.avatars[i].name}",
-"slogan":"123",
-"element":"冰",
-"cons":${Miao.avatars[i].cons},
-"fetter":${Miao.avatars[i].fetter},
-"level":${Miao.avatars[i].level},
-"icon":"UI_AvatarIcon_AyakaCostumeFruhling",
-"gachaAvatarImg": "UI_Costume_AyakaCostumeFruhling",
+      let MiaoChar = Miao.avatars[i]
+      let result = JSON.parse(`{"id":${MiaoChar.id},"rarity":5,"name":"${MiaoChar.name}","slogan":"","element":"${MiaoChar.elem}","cons":${MiaoChar.cons},"fetter":${MiaoChar.fetter},"level":${MiaoChar.level},"icon":"","gachaAvatarImg": "",
 "baseProp":{},
 "fightProp":{},
 "skills":{},
@@ -132,19 +121,33 @@ export class MiaoToGspanel extends plugin {
 "relicSet":{},
 "relicCalc":{},
 "damage":{},
-"time":${Miao.avatars[i]._time}
+"time":${MiaoChar._time}
 }
 `)
-
-
-      char.rarity = 5
-      Gspanel.avatars[Gspanel.avatars.length] = char
+      //TODO：baseProp fightProp skills consts weapon relics relicSet relicCalc damage
+      if (MiaoChar.id == "10000007") {
+        //主角在char-data.json没有数据！只能单独设置了orz
+        result.slogan = "主角暂无slogan喵~"
+        //TODO：icon gachaAvatarImg
+      } else {
+        let char = char_data[MiaoChar.id]
+        if (char.QualityType == "QUALITY_PURPLE") {
+          result.rarity = 4
+        }
+        result.slogan = char.Slogan
+        if (MiaoChar.costume != 0) {
+          //有皮肤，根据皮肤号设定图标
+          //TODO：icon gachaAvatarImg
+        } else {
+          //没皮肤，用默认图标
+          result.icon = char.iconName
+          result.gachaAvatarImg = `UI_Gacha_AvatarImg_${char.Name}`
+        }
+      }
+      Gspanel.avatars[Gspanel.avatars.length] = result
     }
-
-
     fs.writeFileSync(await GspanelPath.concat(`${uid}.json`), JSON.stringify(Gspanel))
-    //fs.writeFileSync(await GspanelPath.concat(`${uid}.json`), JSON.stringify(char_data[10000002].Slogan))
-    return true
+    return false
   }
   async findUID(QQ) {
     //根据QQ号判断对应uid，返回null表示没有对应uid。
