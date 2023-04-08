@@ -1,16 +1,18 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月8日00:07:30
+2023年4月8日16:17:48
 //*/
 
 let MiaoPath = "data/UserData/"
 let GspanelPath = "plugins/py-plugin/data/gspanel/cache/"
+let MiaoResourecePath = "plugins/miao-plugin/resources/meta/character/"
 
 /*
-MiaoPath：miao-plugin产生的面板数据路径，一般不用手动修改
+MiaoPath：miao-plugin产生的面板数据路径，一般不用手动修改。
 GspanelPath：nonebot-plugin-gspanel产生的面板数据路径，需要手动配置到自己安装的路径。
-如果你搭配我的云崽安装教程来安装gspanel，则不需要更改。教程地址https://gitee.com/CUZNIL/Yunzai-install
+MiaoResourecePath：miao-plugin安装位置下对应的角色资料数据存放路径，一般不用修改。
+如果你搭配我的云崽安装教程来安装gspanel，则不需要更改任何内容。教程地址https://gitee.com/CUZNIL/Yunzai-install
 修改请注意保留结尾的“/”
 
 以下内容一般不需要你手动修改，除非你需要高度个性化。需要请自行操刀。
@@ -107,12 +109,14 @@ export class MiaoToGspanel extends plugin {
     //调用前已经判断过该uid一定有面板数据，并且所有路径无误，所以接下来就是修改面板数据以适配Gspanel
     //修正面板数据，在对应目录生成文件。返回值表示处理结果(true：转换成功，false：转换失败)
     let Miao = JSON.parse(fs.readFileSync(MiaoPath.concat(`${uid}.json`)))
-    let char_data = JSON.parse(fs.readFileSync(GspanelPath.concat("../char-data.json")))
+    //char_data_Gspanel:Gspanel面板的所有角色的资料
+    let char_data_Gspanel = JSON.parse(fs.readFileSync(GspanelPath.concat("../char-data.json")))
     let Gspanel = JSON.parse(`{"avatars": [],"next":${Miao._profile}}`)
     for (let i in Miao.avatars) {
+      //MiaoChar：喵喵面板的具体一个角色的数据
+      //result：Gspanel面板的具体一个角色的数据
       let MiaoChar = Miao.avatars[i]
-      let result = JSON.parse(`{"id":${MiaoChar.id},"rarity":5,"name":"${MiaoChar.name}","slogan":"","element":"${MiaoChar.elem}","cons":${MiaoChar.cons},"fetter":${MiaoChar.fetter},"level":${MiaoChar.level},"icon":"","gachaAvatarImg": "",
-"baseProp":{},
+      let result = JSON.parse(`{"id":${MiaoChar.id},"rarity":5,"name":"${MiaoChar.name}","slogan":"异界的旅人","element":"${MiaoChar.elem}","cons":${MiaoChar.cons},"fetter":${MiaoChar.fetter},"level":${MiaoChar.level},"icon":"UI_AvatarIcon_Playerboy","gachaAvatarImg": "UI_Gacha_AvatarImg_Playerboy","baseProp":{"生命值": 10875.0,"攻击力": 212.4,"防御力": 682.5},
 "fightProp":{},
 "skills":{},
 "consts":[],
@@ -124,26 +128,163 @@ export class MiaoToGspanel extends plugin {
 "time":${MiaoChar._time}
 }
 `)
-      //TODO：baseProp fightProp skills consts weapon relics relicSet relicCalc damage
-      if (MiaoChar.id == "10000007") {
-        //主角在char-data.json没有数据！只能单独设置了orz
-        result.slogan = "主角暂无slogan喵~"
-        //TODO：icon gachaAvatarImg
+      switch (result.element) {
+        case "pyro":
+          result.element = "火"
+          break
+        case "hydro":
+          result.element = "水"
+          break
+        case "cryo":
+          result.element = "冰"
+          break
+        case "electro":
+          result.element = "雷"
+          break
+        case "anemo":
+          result.element = "风"
+          break
+        case "geo":
+          result.element = "岩"
+          break
+        case "dendro":
+          result.element = "草"
+          break
+        default:
+      }
+      if (MiaoChar.id == "10000007" || MiaoChar.id == "10000005") {
+        //主角在Gspanel的char-data.json没有数据！只能单独设置了orz
+        if (MiaoChar.id == "10000007") {
+          //如果是妹妹
+          result.icon = "UI_AvatarIcon_Playergirl"
+          result.gachaAvatarImg = "UI_Gacha_AvatarImg_Playergirl"
+        }
       } else {
-        let char = char_data[MiaoChar.id]
-        if (char.QualityType == "QUALITY_PURPLE") {
+        //char_Gspanel：Gspanel面板的具体一个角色的资料
+        let char_Gspanel = char_data_Gspanel[MiaoChar.id]
+        /*为了方便编写查阅，下面是一个示例：      
+        {
+          "Element": "Ice",
+          "Name": "Ayaka",
+          "NameCN": "神里绫华",
+          "Slogan": "白鹭霜华",
+          "NameTextMapHash": 1006042610,
+          "QualityType": "QUALITY_ORANGE",
+          "iconName": "UI_AvatarIcon_Ayaka",
+          "SideIconName": "UI_AvatarIcon_Side_Ayaka",
+          "Base": {
+            "hpBase": 1000.9860229492188,
+            "attackBase": 26.62660026550293,
+            "defenseBase": 61.0265998840332
+          },
+          "Consts": [
+            "UI_Talent_S_Ayaka_01",
+            "UI_Talent_S_Ayaka_02",
+            "UI_Talent_U_Ayaka_02",
+            "UI_Talent_S_Ayaka_03",
+            "UI_Talent_U_Ayaka_01",
+            "UI_Talent_S_Ayaka_04"
+          ],
+          "SkillOrder": [
+            10024,
+            10018,
+            10019
+          ],
+          "Skills": {
+            "10024": "Skill_A_01",
+            "10018": "Skill_S_Ayaka_01",
+            "10019": "Skill_E_Ayaka"
+          },
+          "ProudMap": {
+            "10024": 231,
+            "10018": 232,
+            "10019": 239
+          },
+          "Costumes": {
+            "200201": {
+              "sideIconName": "UI_AvatarIcon_Side_AyakaCostumeFruhling",
+              "icon": "UI_AvatarIcon_AyakaCostumeFruhling",
+              "art": "UI_Costume_AyakaCostumeFruhling",
+              "avatarId": 10000002
+            }
+          }
+        }
+        // */
+        if (char_Gspanel.QualityType == "QUALITY_PURPLE") {
           result.rarity = 4
         }
-        result.slogan = char.Slogan
+        result.slogan = char_Gspanel.Slogan
         if (MiaoChar.costume != 0) {
-          //有皮肤，根据皮肤号设定图标
-          //TODO：icon gachaAvatarImg
+          //有皮肤，用对应图标
+          result.icon = char_Gspanel.Costumes[MiaoChar.costume].icon
+          result.gachaAvatarImg = char_Gspanel.Costumes[MiaoChar.costume].art
         } else {
           //没皮肤，用默认图标
-          result.icon = char.iconName
-          result.gachaAvatarImg = `UI_Gacha_AvatarImg_${char.Name}`
+          result.icon = char_Gspanel.iconName
+          result.gachaAvatarImg = `UI_Gacha_AvatarImg_${char_Gspanel.Name}`
         }
       }
+      //char_Miao：喵喵面板的具体一个角色的资料
+      let char_Miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`${result.name}/data.json`)))
+      /*为了方便编写查阅，下面是一个示例：
+      {
+        "id": 10000029,
+        "name": "可莉",
+        "abbr": "可莉",
+        "title": "逃跑的太阳",
+        "star": 5,
+        "elem": "pyro",
+        "allegiance": "西风骑士团",
+        "weapon": "catalyst",
+        "birth": "7-27",
+        "astro": "四叶草座",
+        "desc": "西风骑士团禁闭室的常客，蒙德的爆破大师。人称「逃跑的太阳」。",
+        "cncv": "花玲",
+        "jpcv": "久野美咲",
+        "costume": false,
+        "ver": 1,
+        "baseAttr": {
+          "hp": 10287,
+          "atk": 310.93,
+          "def": 614.84
+        },
+        "growAttr": {
+          "key": "dmg",
+          "value": 28.8
+        },
+        "talentId": {
+          "10291": "a",
+          "10292": "e",
+          "10295": "q"
+        },
+        "talentCons": {
+          "e": 3,
+          "q": 5
+        },
+        "materials": {
+          "gem": "燃愿玛瑙",
+          "boss": "常燃火种",
+          "specialty": "慕风蘑菇",
+          "normal": "禁咒绘卷",
+          "talent": "「自由」的哲学",
+          "weekly": "北风之环"
+        }
+      }
+      //*/
+
+
+
+
+
+
+
+
+      //TODO：baseProp fightProp skills consts weapon relics relicSet relicCalc damage
+
+
+
+
+
       Gspanel.avatars[Gspanel.avatars.length] = result
     }
     fs.writeFileSync(await GspanelPath.concat(`${uid}.json`), JSON.stringify(Gspanel))
