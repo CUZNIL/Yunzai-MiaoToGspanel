@@ -1,7 +1,7 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月8日23:52:00
+2023年4月10日22:07:22
 //*/
 
 let MiaoPath = "data/UserData/"
@@ -20,11 +20,7 @@ MiaoResourecePath：miao-plugin安装位置下对应的资料数据存放路径�
 
 let redisStart = "Yz:genshin:mys:qq-uid:"
 let errorTIP = "请仔细阅读README，你没有正确配置！可能是以下原因：\n1.你不是通过py-plugin安装的nonebot-plugin-gspanel\n2.你没有正确配置nonebot-plugin-gspanel\n3.你没有正确配置本js插件\n。。。\n为解决本问题请自行阅读https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel"
-import { segment } from "oicq";
-import fetch from "node-fetch";
-import fs, { readdirSync } from 'node:fs'
-import YAML from 'yaml'
-import cfg from '../../lib/config/config.js'
+import fs from 'node:fs'
 export class MiaoToGspanel extends plugin {
   constructor() {
     super({
@@ -117,7 +113,7 @@ export class MiaoToGspanel extends plugin {
         //MiaoChar：喵喵面板的具体一个角色的数据
         let MiaoChar = Miao.avatars[i]
         if (MiaoChar._source == "mys") continue;
-        //char_Miao：喵喵面板的具体一个角色的资料
+        //char_Miao：喵喵的具体一个角色的资料
         let char_Miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`character/${MiaoChar.name}/data.json`)))
         //result：Gspanel面板的具体一个角色的数据
         let result = JSON.parse(`{"id":${char_Miao.id},"rarity":${char_Miao.star},"name":"${MiaoChar.name}","slogan":"${char_Miao.title}","element":"${MiaoChar.elem}","cons":${MiaoChar.cons},"fetter":${MiaoChar.fetter},"level":${MiaoChar.level},"icon":"UI_AvatarIcon_Playerboy","gachaAvatarImg": "UI_Gacha_AvatarImg_Playerboy","baseProp":{"生命值":${char_Miao.baseAttr.hp},"攻击力":${char_Miao.baseAttr.atk},"防御力":${char_Miao.baseAttr.def}},
@@ -139,28 +135,12 @@ export class MiaoToGspanel extends plugin {
   "冰元素伤害加成": 0,
   "岩元素伤害加成": 0
 },
-"skills":{"a":{"style":"","icon":"Skill_A_01","level":${MiaoChar.talent.a},"originLvl":${MiaoChar.talent.a}},"e":{"style":"","icon":"Skill_S_Player_01","level":${MiaoChar.talent.e},"originLvl":${MiaoChar.talent.e}},"q":{"style":"","icon":"Skill_E_Player","level":${MiaoChar.talent.q},"originLvl":${MiaoChar.talent.q}}},
-"consts":[],
-"weapon":{
-  "id": 13405,
-  "rarity": 5,
-  "name": "${MiaoChar.weapon.name}",
-  "affix": ${MiaoChar.weapon.affix},
-  "level": ${MiaoChar.weapon.level},
-  "icon": "UI_EquipIcon_Pole_Gladiator",
-  "main": 454,
-  "sub": {
-    "prop": "暴击率",
-    "value": "36.8%"
-  }
-},
+"skills":{"a":{"style":"","icon":"Skill_A_01","level":${MiaoChar.talent.a},"originLvl":${MiaoChar.talent.a}},"e":{"style":"","icon":"Skill_S_Player_01","level":${MiaoChar.talent.e},"originLvl":${MiaoChar.talent.e}},"q":{"style":"","icon":"Skill_E_Player","level":${MiaoChar.talent.q},"originLvl":${MiaoChar.talent.q}}},"consts":[],"weapon":{"id":114514,"rarity":1919810,"name":"${MiaoChar.weapon.name}","affix":${MiaoChar.weapon.affix},"level":${MiaoChar.weapon.level},"icon":"#SKIP#","main":32767,"sub":{"prop":"涩涩之力","value":"99.9%"}},
 "relics":[],
 "relicSet":{},
 "relicCalc":{},
 "damage":{},
-"time":${MiaoChar._time}
-}
-`)
+"time":${MiaoChar._time}}`)
         switch (result.element) {
           case "pyro":
             result.element = "火"
@@ -183,7 +163,6 @@ export class MiaoToGspanel extends plugin {
           case "dendro":
             result.element = "草"
             break
-          default:
         }
         if (result.cons >= char_Miao.talentCons.e) {
           result.skills.e.style = "extra"
@@ -200,8 +179,9 @@ export class MiaoToGspanel extends plugin {
             result.icon = "UI_AvatarIcon_Playergirl"
             result.gachaAvatarImg = "UI_Gacha_AvatarImg_Playergirl"
           }
+          //SKIP：result.consts是命座信息，但是旅行者的图标我找不到。开摆！
         } else {
-          //char_Gspanel：Gspanel面板的具体一个角色的资料
+          //char_Gspanel：Gspanel的具体一个角色的资料
           let char_Gspanel = char_data_Gspanel[MiaoChar.id]
           if (MiaoChar.costume != 0) {
             //有皮肤，用对应图标
@@ -216,13 +196,86 @@ export class MiaoToGspanel extends plugin {
           result.skills.a.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[0]]
           result.skills.e.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[1]]
           result.skills.q.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[2]]
-          result.consts = JSON.parse(`[{"style":"","icon":"${char_Gspanel.Consts[0]}"},{"style":"","icon":"${char_Gspanel.Consts[1]}"},{"style":"","icon":"${char_Gspanel.Consts[2]}"},{"style":"","icon":"U${char_Gspanel.Consts[3]}"},{"style":"","icon":"${char_Gspanel.Consts[4]}"},{"style":"","icon":"${char_Gspanel.Consts[5]}"}]`)
+          result.consts = JSON.parse(`[{"style":"","icon":"${char_Gspanel.Consts[0]}"},{"style":"","icon":"${char_Gspanel.Consts[1]}"},{"style":"","icon":"${char_Gspanel.Consts[2]}"},{"style":"","icon":"${char_Gspanel.Consts[3]}"},{"style":"","icon":"${char_Gspanel.Consts[4]}"},{"style":"","icon":"${char_Gspanel.Consts[5]}"}]`)
+          switch (result.cons) {
+            case 0:
+              result.consts[0].style = "off"
+            case 1:
+              result.consts[1].style = "off"
+            case 2:
+              result.consts[2].style = "off"
+            case 3:
+              result.consts[3].style = "off"
+            case 4:
+              result.consts[4].style = "off"
+            case 5:
+              result.consts[5].style = "off"
+          }
         }
-        //TODO：fightProp weapon relics relicSet relicCalc damage
 
+        let weaponType = "catalyst"
+        //默认法器
+        switch (result.skills.a.icon) {
+          case "Skill_A_01":
+            //单手剑
+            weaponType = "sword"
+            break
+          case "Skill_A_02":
+            //弓
+            weaponType = "bow"
+            break
+          case "Skill_A_03":
+            //枪
+            weaponType = "polearm"
+            break
+          case "Skill_A_04":
+            //双手剑
+            weaponType = "claymore"
+            break
+        }
+        //weapon_miao：Miao具体一个武器的资料
+        let weapon_miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`weapon/${weaponType}/${result.weapon.name}/data.json`)))
+        result.weapon.id = weapon_miao.id
+        result.weapon.rarity = weapon_miao.star
+        result.weapon.sub.prop = weapon_miao.attr.bonusKey
+        let weaponUP = 20
+        let weaponDN = 1
+        //默认突破0，weaponUP上界，weaponDN下界
+        switch (MiaoChar.weapon.promote) {
+          case 6:
+            weaponUP = 90
+            weaponDN = 80
+            break
+          case 5:
+            weaponUP = 80
+            weaponDN = 70
+            break
+          case 4:
+            weaponUP = 70
+            weaponDN = 60
+            break
+          case 3:
+            weaponUP = 60
+            weaponDN = 50
+            break
+          case 2:
+            weaponUP = 50
+            weaponDN = 40
+            break
+          case 1:
+            weaponUP = 40
+            weaponDN = 20
+            break
+          default:
+            //如果调用1级数据，为简化代码生成1+级数据。
+            weapon_miao.attr.atk["1+"] = weapon_miao.attr.atk["1"]
+            weapon_miao.attr.bonusData["1+"] = weapon_miao.attr.bonusData["1"]
+        }
+        result.weapon.main = await Number((((weapon_miao.attr.atk[`${weaponUP}`] - weapon_miao.attr.atk[`${weaponDN}`]) * result.weapon.level - weapon_miao.attr.atk[`${weaponUP}`] * weaponDN + weapon_miao.attr.atk[`${weaponDN}`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2))
+        result.weapon.sub.value = await (((weapon_miao.attr.bonusData[`${weaponUP}`] - weapon_miao.attr.bonusData[`${weaponDN}`]) * result.weapon.level - weapon_miao.attr.bonusData[`${weaponUP}`] * weaponDN + weapon_miao.attr.bonusData[`${weaponDN}`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2)
+        //SKIP：result.weapon.icon不会影响正常功能，而且好难搞，不折腾了。
 
-
-
+        //TODO：fightProp relics relicSet relicCalc damage
 
         Gspanel.avatars[Gspanel.avatars.length] = result
       }
@@ -242,56 +295,6 @@ export class MiaoToGspanel extends plugin {
     return uid
   }
   async help() {
-
-
-
     await this.reply(` ${fs.readFileSync(GspanelPath.concat("../qq-uid.json"))}`)
   }
 }
-
-
-/*为了方便编写查阅，下面是一个示例：
-      {
-        "id": 10000029,
-        "name": "可莉",
-        "abbr": "可莉",
-        "title": "逃跑的太阳",
-        "star": 5,
-        "elem": "pyro",
-        "allegiance": "西风骑士团",
-        "weapon": "catalyst",
-        "birth": "7-27",
-        "astro": "四叶草座",
-        "desc": "西风骑士团禁闭室的常客，蒙德的爆破大师。人称「逃跑的太阳」。",
-        "cncv": "花玲",
-        "jpcv": "久野美咲",
-        "costume": false,
-        "ver": 1,
-        "baseAttr": {
-          "hp": 10287,
-          "atk": 310.93,
-          "def": 614.84
-        },
-        "growAttr": {
-          "key": "dmg",
-          "value": 28.8
-        },
-        "talentId": {
-          "10291": "a",
-          "10292": "e",
-          "10295": "q"
-        },
-        "talentCons": {
-          "e": 3,
-          "q": 5
-        },
-        "materials": {
-          "gem": "燃愿玛瑙",
-          "boss": "常燃火种",
-          "specialty": "慕风蘑菇",
-          "normal": "禁咒绘卷",
-          "talent": "「自由」的哲学",
-          "weekly": "北风之环"
-        }
-      }
-//*/
