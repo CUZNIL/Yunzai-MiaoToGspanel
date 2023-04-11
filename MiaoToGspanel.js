@@ -1,7 +1,7 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月11日20:05:14
+2023年4月11日21:07:43
 //*/
 
 let MiaoPath = "data/UserData/"
@@ -185,6 +185,7 @@ export class MiaoToGspanel extends plugin {
       for (let i in Miao.avatars) {
         //MiaoChar：喵喵面板的具体一个角色的数据
         let MiaoChar = Miao.avatars[i]
+        //如果数据来源是米游社，那根本就不会有带圣遗物的面板数据，取消执行。
         if (MiaoChar._source == "mys") continue;
         //char_Miao：喵喵的具体一个角色的资料
         let char_Miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`character/${MiaoChar.name}/data.json`)))
@@ -206,19 +207,19 @@ export class MiaoToGspanel extends plugin {
             "防御力": char_Miao.baseAttr.def
           },
           "fightProp": {
-            "生命值": 27848.5625,
-            "攻击力": 1135.0613049109488,
-            "防御力": 1009.6231079101562,
-            "暴击率": 86.86199188232422,
-            "暴击伤害": 189.45999145507812,
+            "生命值": char_Miao.baseAttr.hp,
+            "攻击力": char_Miao.baseAttr.atk,
+            "防御力": char_Miao.baseAttr.def,
+            "暴击率": 5,
+            "暴击伤害": 50,
             "治疗加成": 0,
-            "元素精通": 69.94000244140625,
-            "元素充能效率": 109.7100019454956,
+            "元素精通": 0,
+            "元素充能效率": 100,
             "物理伤害加成": 0,
-            "火元素伤害加成": 61.59999966621399,
+            "火元素伤害加成": 0,
             "水元素伤害加成": 0,
             "风元素伤害加成": 0,
-            "雷元素伤害加成": 15.000000596046448,
+            "雷元素伤害加成": 0,
             "草元素伤害加成": 0,
             "冰元素伤害加成": 0,
             "岩元素伤害加成": 0
@@ -244,142 +245,198 @@ export class MiaoToGspanel extends plugin {
           "damage": {},
           "time": MiaoChar._time
         }
-
-
-        switch (result.element) {
-          case "pyro":
-            result.element = "火"
-            break
-          case "hydro":
-            result.element = "水"
-            break
-          case "cryo":
-            result.element = "冰"
-            break
-          case "electro":
-            result.element = "雷"
-            break
-          case "anemo":
-            result.element = "风"
-            break
-          case "geo":
-            result.element = "岩"
-            break
-          case "dendro":
-            result.element = "草"
-            break
-        }
-        if (result.cons >= char_Miao.talentCons.e) {
-          result.skills.e.style = "extra"
-          result.skills.e.level += 3
-        }
-        if (result.cons >= char_Miao.talentCons.q) {
-          result.skills.q.style = "extra"
-          result.skills.q.level += 3
-        }
-        if (MiaoChar.id == "10000007" || MiaoChar.id == "10000005") {
-          //主角在Gspanel的char-data.json没有数据！只能单独设置了orz
-          if (MiaoChar.id == "10000007") {
-            //如果是妹妹
-            result.icon = "UI_AvatarIcon_PlayerGirl"
-            result.gachaAvatarImg = "UI_Gacha_AvatarImg_PlayerGirl"
+        {
+          switch (result.element) {
+            case "pyro":
+              result.element = "火"
+              break
+            case "hydro":
+              result.element = "水"
+              break
+            case "cryo":
+              result.element = "冰"
+              break
+            case "electro":
+              result.element = "雷"
+              break
+            case "anemo":
+              result.element = "风"
+              break
+            case "geo":
+              result.element = "岩"
+              break
+            case "dendro":
+              result.element = "草"
+              break
           }
-          result.consts = [{ "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][0] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][1] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][2] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][3] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][4] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][5] }]
-        } else {
-          //char_Gspanel：Gspanel的具体一个角色的资料
-          let char_Gspanel = char_data_Gspanel[MiaoChar.id]
-          if (MiaoChar.costume != 0) {
-            //有皮肤，用对应图标
-            result.icon = char_Gspanel.Costumes[MiaoChar.costume].icon
-            result.gachaAvatarImg = char_Gspanel.Costumes[MiaoChar.costume].art
+          if (result.cons >= char_Miao.talentCons.e) {
+            result.skills.e.style = "extra"
+            result.skills.e.level += 3
+          }
+          if (result.cons >= char_Miao.talentCons.q) {
+            result.skills.q.style = "extra"
+            result.skills.q.level += 3
+          }
+          if (MiaoChar.id == "10000007" || MiaoChar.id == "10000005") {
+            //主角在Gspanel的char-data.json没有数据！只能单独设置了orz
+            if (MiaoChar.id == "10000007") {
+              //如果是妹妹
+              result.icon = "UI_AvatarIcon_PlayerGirl"
+              result.gachaAvatarImg = "UI_Gacha_AvatarImg_PlayerGirl"
+            }
+            result.consts = [{ "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][0] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][1] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][2] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][3] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][4] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][5] }]
           } else {
-            //没皮肤，用默认图标
-            result.icon = char_Gspanel.iconName
-            result.gachaAvatarImg = `UI_Gacha_AvatarImg_${char_Gspanel.Name}`
+            //char_Gspanel：Gspanel的具体一个角色的资料
+            let char_Gspanel = char_data_Gspanel[MiaoChar.id]
+            if (MiaoChar.costume != 0) {
+              //有皮肤，用对应图标
+              result.icon = char_Gspanel.Costumes[MiaoChar.costume].icon
+              result.gachaAvatarImg = char_Gspanel.Costumes[MiaoChar.costume].art
+            } else {
+              //没皮肤，用默认图标
+              result.icon = char_Gspanel.iconName
+              result.gachaAvatarImg = `UI_Gacha_AvatarImg_${char_Gspanel.Name}`
+            }
+            //技能图标
+            result.skills.a.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[0]]
+            result.skills.e.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[1]]
+            result.skills.q.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[2]]
+            result.consts = [{ "style": "", "icon": char_Gspanel.Consts[0] }, { "style": "", "icon": char_Gspanel.Consts[1] }, { "style": "", "icon": char_Gspanel.Consts[2] }, { "style": "", "icon": char_Gspanel.Consts[3] }, { "style": "", "icon": char_Gspanel.Consts[4] }, { "style": "", "icon": char_Gspanel.Consts[5] }]
           }
-          //技能图标
-          result.skills.a.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[0]]
-          result.skills.e.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[1]]
-          result.skills.q.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[2]]
-          result.consts = [{ "style": "", "icon": char_Gspanel.Consts[0] }, { "style": "", "icon": char_Gspanel.Consts[1] }, { "style": "", "icon": char_Gspanel.Consts[2] }, { "style": "", "icon": char_Gspanel.Consts[3] }, { "style": "", "icon": char_Gspanel.Consts[4] }, { "style": "", "icon": char_Gspanel.Consts[5] }]
+          switch (result.cons) {
+            //根据命座决定图标是否亮起
+            case 0:
+              result.consts[0].style = "off"
+            case 1:
+              result.consts[1].style = "off"
+            case 2:
+              result.consts[2].style = "off"
+            case 3:
+              result.consts[3].style = "off"
+            case 4:
+              result.consts[4].style = "off"
+            case 5:
+              result.consts[5].style = "off"
+          }
+          let weaponType = "catalyst"
+          //默认法器
+          switch (result.skills.a.icon) {
+            case "Skill_A_01":
+              //单手剑
+              weaponType = "sword"
+              break
+            case "Skill_A_02":
+              //弓
+              weaponType = "bow"
+              break
+            case "Skill_A_03":
+              //枪
+              weaponType = "polearm"
+              break
+            case "Skill_A_04":
+              //双手剑
+              weaponType = "claymore"
+              break
+          }
+          //weapon_miao：Miao具体一个武器的资料
+          let weapon_miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`weapon/${weaponType}/${result.weapon.name}/data.json`)))
+          result.weapon.id = weapon_miao.id
+          result.weapon.rarity = weapon_miao.star
+          result.weapon.sub.prop = weapon_miao.attr.bonusKey
+          let weaponUP = 20
+          let weaponDN = 1
+          //默认突破0，weaponUP上界，weaponDN下界
+          switch (MiaoChar.weapon.promote) {
+            case 6:
+              weaponUP = 90
+              weaponDN = 80
+              break
+            case 5:
+              weaponUP = 80
+              weaponDN = 70
+              break
+            case 4:
+              weaponUP = 70
+              weaponDN = 60
+              break
+            case 3:
+              weaponUP = 60
+              weaponDN = 50
+              break
+            case 2:
+              weaponUP = 50
+              weaponDN = 40
+              break
+            case 1:
+              weaponUP = 40
+              weaponDN = 20
+              break
+            default:
+              //如果调用1级数据，为简化代码生成1+级数据。
+              weapon_miao.attr.atk["1+"] = weapon_miao.attr.atk["1"]
+              weapon_miao.attr.bonusData["1+"] = weapon_miao.attr.bonusData["1"]
+          }
+          result.weapon.main = await Number((((weapon_miao.attr.atk[`${weaponUP}`] - weapon_miao.attr.atk[`${weaponDN}`]) * result.weapon.level - weapon_miao.attr.atk[`${weaponUP}`] * weaponDN + weapon_miao.attr.atk[`${weaponDN}`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2))
+          result.weapon.sub.value = await (((weapon_miao.attr.bonusData[`${weaponUP}`] - weapon_miao.attr.bonusData[`${weaponDN}`]) * result.weapon.level - weapon_miao.attr.bonusData[`${weaponUP}`] * weaponDN + weapon_miao.attr.bonusData[`${weaponDN}`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2)
+          result.weapon.icon = WeaponID_To_IconName[result.weapon.id]
         }
-        switch (result.cons) {
-          //根据命座决定图标是否亮起
-          case 0:
-            result.consts[0].style = "off"
-          case 1:
-            result.consts[1].style = "off"
-          case 2:
-            result.consts[2].style = "off"
-          case 3:
-            result.consts[3].style = "off"
-          case 4:
-            result.consts[4].style = "off"
-          case 5:
-            result.consts[5].style = "off"
-        }
-        let weaponType = "catalyst"
-        //默认法器
-        switch (result.skills.a.icon) {
-          case "Skill_A_01":
-            //单手剑
-            weaponType = "sword"
-            break
-          case "Skill_A_02":
-            //弓
-            weaponType = "bow"
-            break
-          case "Skill_A_03":
-            //枪
-            weaponType = "polearm"
-            break
-          case "Skill_A_04":
-            //双手剑
-            weaponType = "claymore"
-            break
-        }
-        //weapon_miao：Miao具体一个武器的资料
-        let weapon_miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`weapon/${weaponType}/${result.weapon.name}/data.json`)))
-        result.weapon.id = weapon_miao.id
-        result.weapon.rarity = weapon_miao.star
-        result.weapon.sub.prop = weapon_miao.attr.bonusKey
-        let weaponUP = 20
-        let weaponDN = 1
-        //默认突破0，weaponUP上界，weaponDN下界
-        switch (MiaoChar.weapon.promote) {
-          case 6:
-            weaponUP = 90
-            weaponDN = 80
-            break
-          case 5:
-            weaponUP = 80
-            weaponDN = 70
-            break
-          case 4:
-            weaponUP = 70
-            weaponDN = 60
-            break
-          case 3:
-            weaponUP = 60
-            weaponDN = 50
-            break
-          case 2:
-            weaponUP = 50
-            weaponDN = 40
-            break
-          case 1:
-            weaponUP = 40
-            weaponDN = 20
-            break
-          default:
-            //如果调用1级数据，为简化代码生成1+级数据。
-            weapon_miao.attr.atk["1+"] = weapon_miao.attr.atk["1"]
-            weapon_miao.attr.bonusData["1+"] = weapon_miao.attr.bonusData["1"]
-        }
-        result.weapon.main = await Number((((weapon_miao.attr.atk[`${weaponUP}`] - weapon_miao.attr.atk[`${weaponDN}`]) * result.weapon.level - weapon_miao.attr.atk[`${weaponUP}`] * weaponDN + weapon_miao.attr.atk[`${weaponDN}`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2))
-        result.weapon.sub.value = await (((weapon_miao.attr.bonusData[`${weaponUP}`] - weapon_miao.attr.bonusData[`${weaponDN}`]) * result.weapon.level - weapon_miao.attr.bonusData[`${weaponUP}`] * weaponDN + weapon_miao.attr.bonusData[`${weaponDN}`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2)
-        result.weapon.icon = WeaponID_To_IconName[result.weapon.id]
 
+        let artis = {
+          "pos": 1,
+          "rarity": 4,
+          "name": "赌徒的胸花",
+          "setName": "赌徒",
+          "level": 16,
+          "main": {
+            "prop": "生命值",
+            "value": "3571"
+          },
+          "sub": [
+            {
+              "prop": "充能效率",
+              "value": "13%"
+            },
+            {
+              "prop": "攻击力",
+              "value": "3.7%"
+            },
+            {
+              "prop": "生命值",
+              "value": "3.7%"
+            },
+            {
+              "prop": "攻击力",
+              "value": "12"
+            }
+          ],
+          "calc": {
+            "rank": "C",
+            "total": 13.4,
+            "nohit": 1,
+            "main": 0.0,
+            "sub": [
+              {
+                "style": "use",
+                "goal": 8.6
+              },
+              {
+                "style": "use",
+                "goal": 3.7
+              },
+              {
+                "style": "unuse",
+                "goal": 0.0
+              },
+              {
+                "style": "use",
+                "goal": 1.5
+              }
+            ],
+            "main_pct": 100,
+            "total_pct": 97.1
+          },
+          "icon": "UI_RelicIcon_10008_4"
+        }
         //TODO：fightProp relics relicSet relicCalc damage
 
         Gspanel.avatars[Gspanel.avatars.length] = result
@@ -476,7 +533,7 @@ export class MiaoToGspanel extends plugin {
     `
     ori += ',' + translate + '}'
     ori = JSON.parse(ori)
-    for (let i in ori) try { ori[i].value = Number(ori[i].value) } catch (e) { }
+    for (let i in ori) try { ori[i].value = Number((Number(ori[i].value)).toFixed(5)) } catch (e) { }
     fs.writeFileSync(resource.concat("attr_map.json"), JSON.stringify(ori))
   }
   async test() {
