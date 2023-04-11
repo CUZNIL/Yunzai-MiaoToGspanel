@@ -1,7 +1,7 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月11日16:04:18
+2023年4月11日20:05:14
 //*/
 
 let MiaoPath = "data/UserData/"
@@ -12,13 +12,10 @@ let MiaoResourecePath = "plugins/miao-plugin/resources/meta/"
 MiaoPath：miao-plugin产生的面板数据路径，一般不用手动修改。
 GspanelPath：nonebot-plugin-gspanel产生的面板数据路径，需要手动配置到自己安装的路径。
 MiaoResourecePath：miao-plugin安装位置下对应的资料数据存放路径，一般不用修改。
-如果你搭配我的云崽安装教程来安装gspanel，则不需要更改任何内容。教程地址https://gitee.com/CUZNIL/Yunzai-install
+如果你搭配我的云崽安装教程来安装gspanel，则不需要更改任何内容。云崽安装教程：https://gitee.com/CUZNIL/Yunzai-install
 修改请注意保留结尾的“/”
 
 以下内容一般不需要你手动修改，除非你需要高度个性化。需要请自行操刀。
-
-武器数据下载地址：https://gitlab.com/Dimbreath/AnimeGameData/-/raw/master/ExcelBinOutput/WeaponExcelConfigData.json?inline=false
-如果该插件过时，可以自行修改格式
 //*/
 import fs from 'node:fs'
 
@@ -40,13 +37,14 @@ try {
   console.log(`【MiaoToGspanel插件】${logger.red(e)}\n【MiaoToGspanel插件】推测报错原因为没有插件运行必要的WeaponID_To_IconName.json，即将尝试下载该文件以便调用！`)
   let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/WeaponID_To_IconName.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
   logger.mark(`【MiaoToGspanel插件】尝试下载中。。\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
-  console.log(`【MiaoToGspanel插件】下载完毕！该文件可能过时！\n【MiaoToGspanel插件】如出现武器图标错误请发送#武器数据更新。\n下载位置：${resource}WeaponID_To_IconName.json`)
+  console.log(`【MiaoToGspanel插件】下载完毕！该文件可能过时！\n【MiaoToGspanel插件】如出现武器图标错误请发送#武器数据更新 。\n下载位置：${resource}WeaponID_To_IconName.json`)
   try {
     WeaponID_To_IconName = JSON.parse(fs.readFileSync(resource.concat("WeaponID_To_IconName.json")))
   } catch (e2) {
     console.log(`${logger.red(`【MiaoToGspanel插件】${e2}\n【MiaoToGspanel插件】没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
   }
 }
+//PlayerElem_To_ConsIconName:旅行者元素到命座图标的映射
 let PlayerElem_To_ConsIconName
 try {
   PlayerElem_To_ConsIconName = JSON.parse(fs.readFileSync(resource.concat("PlayerElem_To_ConsIconName.json")))
@@ -54,13 +52,29 @@ try {
   console.log(`【MiaoToGspanel插件】${logger.red(e)}\n【MiaoToGspanel插件】推测报错原因为没有插件运行必要的PlayerElem_To_ConsIconName.json，即将尝试下载该文件以便调用！`)
   let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/PlayerElem_To_ConsIconName.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
   logger.mark(`【MiaoToGspanel插件】尝试下载中。。\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
-  console.log(`【MiaoToGspanel插件】下载完毕！该文件可能过时！\n【MiaoToGspanel插件】如出现旅行者命座图标错误请发送#主角命座更新。\n下载位置：${resource}PlayerElem_To_ConsIconName.json`)
+  console.log(`【MiaoToGspanel插件】下载完毕！该文件可能过时！\n【MiaoToGspanel插件】如出现旅行者命座图标错误请发送#主角命座更新 。\n下载位置：${resource}PlayerElem_To_ConsIconName.json`)
   try {
     PlayerElem_To_ConsIconName = JSON.parse(fs.readFileSync(resource.concat("PlayerElem_To_ConsIconName.json")))
   } catch (e2) {
     console.log(`${logger.red(`【MiaoToGspanel插件】${e2}\n【MiaoToGspanel插件】没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
   }
 }
+//attr_map:属性id到属性英文的映射+属性英文到属性中文的映射
+let attr_map
+try {
+  attr_map = JSON.parse(fs.readFileSync(resource.concat("attr_map.json")))
+} catch (e) {
+  console.log(`【MiaoToGspanel插件】${logger.red(e)}\n【MiaoToGspanel插件】推测报错原因为没有插件运行必要的attr_map.json，即将尝试下载该文件以便调用！`)
+  let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/attr_map.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
+  logger.mark(`【MiaoToGspanel插件】尝试下载中。。\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
+  console.log(`【MiaoToGspanel插件】下载完毕！该文件可能过时！\n【MiaoToGspanel插件】如出现属性昵称错误请发送#属性映射更新 。\n下载位置：${resource}attr_map.json`)
+  try {
+    attr_map = JSON.parse(fs.readFileSync(resource.concat("attr_map.json")))
+  } catch (e2) {
+    console.log(`${logger.red(`【MiaoToGspanel插件】${e2}\n【MiaoToGspanel插件】没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
+  }
+}
+
 
 export class MiaoToGspanel extends plugin {
   constructor() {
@@ -77,7 +91,9 @@ export class MiaoToGspanel extends plugin {
         {
           reg: '^#?转换(喵喵|PY)?面板(\\d{9})?$',
           fnc: 'M2G_query',
+          permission: 'master'
         },
+        //以下命令都是尝试主动更新数据，如果你没有遇到BUG请不要尝试发送以下命令(以免bug)
         {
           reg: '^#?武器数据更新$',
           fnc: 'weaponUpdate',
@@ -86,6 +102,16 @@ export class MiaoToGspanel extends plugin {
         {
           reg: '^#?主角命座更新$',
           fnc: 'playerUpdate',
+          permission: 'master'
+        },
+        {
+          reg: '^#?属性映射更新$',
+          fnc: 'relicUpdate',
+          permission: 'master'
+        },
+        {
+          reg: '^#?测试$',
+          fnc: 'test',
           permission: 'master'
         }
       ]
@@ -164,7 +190,21 @@ export class MiaoToGspanel extends plugin {
         let char_Miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`character/${MiaoChar.name}/data.json`)))
         //result：Gspanel面板的具体一个角色的数据
         let result = {
-          "id": char_Miao.id, "rarity": char_Miao.star, "name": MiaoChar.name, "slogan": char_Miao.title, "element": MiaoChar.elem, "cons": MiaoChar.cons, "fetter": MiaoChar.fetter, "level": MiaoChar.level, "icon": "UI_AvatarIcon_PlayerBoy", "gachaAvatarImg": "UI_Gacha_AvatarImg_PlayerBoy", "baseProp": { "生命值": char_Miao.baseAttr.hp, "攻击力": char_Miao.baseAttr.atk, "防御力": char_Miao.baseAttr.def },
+          "id": char_Miao.id,
+          "rarity": char_Miao.star,
+          "name": MiaoChar.name,
+          "slogan": char_Miao.title,
+          "element": MiaoChar.elem,
+          "cons": MiaoChar.cons,
+          "fetter": MiaoChar.fetter,
+          "level": MiaoChar.level,
+          "icon": "UI_AvatarIcon_PlayerBoy",
+          "gachaAvatarImg": "UI_Gacha_AvatarImg_PlayerBoy",
+          "baseProp": {
+            "生命值": char_Miao.baseAttr.hp,
+            "攻击力": char_Miao.baseAttr.atk,
+            "防御力": char_Miao.baseAttr.def
+          },
           "fightProp": {
             "生命值": 27848.5625,
             "攻击力": 1135.0613049109488,
@@ -183,7 +223,21 @@ export class MiaoToGspanel extends plugin {
             "冰元素伤害加成": 0,
             "岩元素伤害加成": 0
           },
-          "skills": { "a": { "style": "", "icon": "Skill_A_01", "level": MiaoChar.talent.a, "originLvl": MiaoChar.talent.a }, "e": { "style": "", "icon": "Skill_S_Player_01", "level": MiaoChar.talent.e, "originLvl": MiaoChar.talent.e }, "q": { "style": "", "icon": "Skill_E_Player", "level": MiaoChar.talent.q, "originLvl": MiaoChar.talent.q } }, "consts": [], "weapon": { "id": 114514, "rarity": 1919810, "name": MiaoChar.weapon.name, "affix": MiaoChar.weapon.affix, "level": MiaoChar.weapon.level, "icon": "牛逼啊", "main": 32767, "sub": { "prop": "涩涩之力", "value": "99.9%" } },
+          "skills": { "a": { "style": "", "icon": "Skill_A_01", "level": MiaoChar.talent.a, "originLvl": MiaoChar.talent.a }, "e": { "style": "", "icon": "Skill_S_Player_01", "level": MiaoChar.talent.e, "originLvl": MiaoChar.talent.e }, "q": { "style": "", "icon": "Skill_E_Player", "level": MiaoChar.talent.q, "originLvl": MiaoChar.talent.q } }, "consts": [],
+          "weapon": {
+            "id": 114514,
+            "rarity": 1919810,
+            "name": MiaoChar.weapon.name,
+            "affix": MiaoChar.weapon.affix,
+            "level": MiaoChar.weapon.level,
+            "icon": "牛逼啊",
+            "main": 32767,
+            "sub": {
+              "prop":
+                "涩涩之力",
+              "value": "99.9%"
+            }
+          },
           "relics": [],
           "relicSet": {},
           "relicCalc": {},
@@ -326,7 +380,6 @@ export class MiaoToGspanel extends plugin {
         result.weapon.sub.value = await (((weapon_miao.attr.bonusData[`${weaponUP}`] - weapon_miao.attr.bonusData[`${weaponDN}`]) * result.weapon.level - weapon_miao.attr.bonusData[`${weaponUP}`] * weaponDN + weapon_miao.attr.bonusData[`${weaponDN}`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2)
         result.weapon.icon = WeaponID_To_IconName[result.weapon.id]
 
-
         //TODO：fightProp relics relicSet relicCalc damage
 
         Gspanel.avatars[Gspanel.avatars.length] = result
@@ -348,7 +401,7 @@ export class MiaoToGspanel extends plugin {
   }
   async weaponUpdate() {
     //数据来源：https://gitlab.com/Dimbreath/AnimeGameData/-/blob/master/ExcelBinOutput/WeaponExcelConfigData.json
-    //还没写完还没写完还没写完还没写完还没写完还没写完
+    //TODO：主动更新逻辑
     let ori = JSON.parse(fs.readFileSync(GspanelPath.concat("../WeaponExcelConfigData.json")))
     let WeaponID_To_IconName = {}
     for (let i in ori) {
@@ -358,7 +411,7 @@ export class MiaoToGspanel extends plugin {
   }
   async playerUpdate() {
     //数据来源：https://gitlab.com/Dimbreath/AnimeGameData/-/blob/master/ExcelBinOutput/AvatarTalentExcelConfigData.json
-    //还没写完还没写完还没写完还没写完还没写完还没写完
+    //TODO：主动更新逻辑
     let ori = JSON.parse(fs.readFileSync(resource.concat("AvatarTalentExcelConfigData.json")))
     let PlayerElem_To_ConsIconName = { "风": [], "岩": [], "雷": [], "草": [] }
     for (let i in ori) {
@@ -379,5 +432,67 @@ export class MiaoToGspanel extends plugin {
       }
     }
     fs.writeFileSync(resource.concat("PlayerElem_To_ConsIconName.json"), JSON.stringify(PlayerElem_To_ConsIconName))
+  }
+  async relicUpdate() {
+    //数据来源：https://gitee.com/yoimiya-kokomi/miao-plugin/blob/master/resources/meta/artifact/meta.js
+    let ori = fs.readFileSync(MiaoResourecePath.concat("artifact/meta.js")).toString()
+    let startM = ori.indexOf("mainIdMap")
+    let startA = ori.indexOf("attrIdMap")
+    if (startM == -1 || startA == -1) {
+      this.reply(`【更新失败】\n怎么辉石呢？没有在文件${MiaoResourecePath}artifact/meta.js里找到mainIdMap、attrIdMap呢orz`)
+      return false
+    }
+    let endM = startA
+    let endA = ori.length
+    while (ori[startM] != '{') startM++
+    while (ori[startA] != '{') startA++
+    while (ori[endM] != '}') endM--
+
+    ori = ori.substring(startM, endM) + ',' + ori.substring(startA + 1, endA - 1)
+    ori = ori.replaceAll("'", "")
+    ori = ori.replaceAll(/(\w|\.)+/g, `"$&"`)
+    //ori = ori.replaceAll(`"."`, `.`)
+    //请手动更改translate为  "原文":"译文",   这样的格式，最后一行不要带逗号。
+    let translate = `
+    "hpPlus":"生命值",
+    "hp":"生命值",
+    "atkPlus":"攻击力",
+    "atk":"攻击力",
+    "defPlus":"防御力",
+    "def":"防御力",
+    "recharge":"充能效率",
+    "mastery":"元素精通",
+    "cpct":"暴击率",
+    "cdmg":"暴击伤害",
+    "heal":"治疗加成",
+    "pyro":"火伤加成",
+    "electro":"雷伤加成",
+    "cryo":"冰伤加成",
+    "hydro":"水伤加成",
+    "anemo":"风伤加成",
+    "geo":"岩伤加成",
+    "dendro":"草伤加成",
+    "phy":"物伤加成"
+    `
+    ori += ',' + translate + '}'
+    ori = JSON.parse(ori)
+    for (let i in ori) try { ori[i].value = Number(ori[i].value) } catch (e) { }
+    fs.writeFileSync(resource.concat("attr_map.json"), JSON.stringify(ori))
+  }
+  async test() {
+    let g = JSON.parse(fs.readFileSync(resource.concat("Gspanel.json")))
+    g = g.avatars
+    let test = {}
+    for (let i in g) {
+      let a = g[i].relics
+      for (let j in a) {
+        test[a[j].main.prop] = a[j].main.value
+        let b = a[j].sub
+        for (let j in b) {
+          test[b[j].prop] = b[j].value
+        }
+      }
+    }
+    fs.writeFileSync(resource.concat("test.json"), JSON.stringify(test))
   }
 }
