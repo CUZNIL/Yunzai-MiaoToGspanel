@@ -1,7 +1,7 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月11日15:17:07
+2023年4月11日16:04:18
 //*/
 
 let MiaoPath = "data/UserData/"
@@ -20,6 +20,7 @@ MiaoResourecePath：miao-plugin安装位置下对应的资料数据存放路径�
 武器数据下载地址：https://gitlab.com/Dimbreath/AnimeGameData/-/raw/master/ExcelBinOutput/WeaponExcelConfigData.json?inline=false
 如果该插件过时，可以自行修改格式
 //*/
+import fs from 'node:fs'
 
 let redisStart = "Yz:genshin:mys:qq-uid:"
 let errorTIP = "请仔细阅读README，你没有正确配置！可能是以下原因：\n1.你不是通过py-plugin安装的nonebot-plugin-gspanel\n2.你没有正确配置nonebot-plugin-gspanel\n3.你没有正确配置本js插件\n。。。\n为解决本问题请自行阅读https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel"
@@ -46,10 +47,6 @@ try {
     console.log(`${logger.red(`【MiaoToGspanel插件】${e2}\n【MiaoToGspanel插件】没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
   }
 }
-
-
-
-
 let PlayerElem_To_ConsIconName
 try {
   PlayerElem_To_ConsIconName = JSON.parse(fs.readFileSync(resource.concat("PlayerElem_To_ConsIconName.json")))
@@ -64,7 +61,7 @@ try {
     console.log(`${logger.red(`【MiaoToGspanel插件】${e2}\n【MiaoToGspanel插件】没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
   }
 }
-import fs from 'node:fs'
+
 export class MiaoToGspanel extends plugin {
   constructor() {
     super({
@@ -166,31 +163,33 @@ export class MiaoToGspanel extends plugin {
         //char_Miao：喵喵的具体一个角色的资料
         let char_Miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`character/${MiaoChar.name}/data.json`)))
         //result：Gspanel面板的具体一个角色的数据
-        let result = JSON.parse(`{"id":${char_Miao.id},"rarity":${char_Miao.star},"name":"${MiaoChar.name}","slogan":"${char_Miao.title}","element":"${MiaoChar.elem}","cons":${MiaoChar.cons},"fetter":${MiaoChar.fetter},"level":${MiaoChar.level},"icon":"UI_AvatarIcon_PlayerBoy","gachaAvatarImg": "UI_Gacha_AvatarImg_PlayerBoy","baseProp":{"生命值":${char_Miao.baseAttr.hp},"攻击力":${char_Miao.baseAttr.atk},"防御力":${char_Miao.baseAttr.def}},
-"fightProp":{
-  "生命值": 27848.5625,
-  "攻击力": 1135.0613049109488,
-  "防御力": 1009.6231079101562,
-  "暴击率": 86.86199188232422,
-  "暴击伤害": 189.45999145507812,
-  "治疗加成": 0,
-  "元素精通": 69.94000244140625,
-  "元素充能效率": 109.7100019454956,
-  "物理伤害加成": 0,
-  "火元素伤害加成": 61.59999966621399,
-  "水元素伤害加成": 0,
-  "风元素伤害加成": 0,
-  "雷元素伤害加成": 15.000000596046448,
-  "草元素伤害加成": 0,
-  "冰元素伤害加成": 0,
-  "岩元素伤害加成": 0
-},
-"skills":{"a":{"style":"","icon":"Skill_A_01","level":${MiaoChar.talent.a},"originLvl":${MiaoChar.talent.a}},"e":{"style":"","icon":"Skill_S_Player_01","level":${MiaoChar.talent.e},"originLvl":${MiaoChar.talent.e}},"q":{"style":"","icon":"Skill_E_Player","level":${MiaoChar.talent.q},"originLvl":${MiaoChar.talent.q}}},"consts":[],"weapon":{"id":114514,"rarity":1919810,"name":"${MiaoChar.weapon.name}","affix":${MiaoChar.weapon.affix},"level":${MiaoChar.weapon.level},"icon":"牛逼啊","main":32767,"sub":{"prop":"涩涩之力","value":"99.9%"}},
-"relics":[],
-"relicSet":{},
-"relicCalc":{},
-"damage":{},
-"time":${MiaoChar._time}}`)
+        let result = {
+          "id": char_Miao.id, "rarity": char_Miao.star, "name": MiaoChar.name, "slogan": char_Miao.title, "element": MiaoChar.elem, "cons": MiaoChar.cons, "fetter": MiaoChar.fetter, "level": MiaoChar.level, "icon": "UI_AvatarIcon_PlayerBoy", "gachaAvatarImg": "UI_Gacha_AvatarImg_PlayerBoy", "baseProp": { "生命值": char_Miao.baseAttr.hp, "攻击力": char_Miao.baseAttr.atk, "防御力": char_Miao.baseAttr.def },
+          "fightProp": {
+            "生命值": 27848.5625,
+            "攻击力": 1135.0613049109488,
+            "防御力": 1009.6231079101562,
+            "暴击率": 86.86199188232422,
+            "暴击伤害": 189.45999145507812,
+            "治疗加成": 0,
+            "元素精通": 69.94000244140625,
+            "元素充能效率": 109.7100019454956,
+            "物理伤害加成": 0,
+            "火元素伤害加成": 61.59999966621399,
+            "水元素伤害加成": 0,
+            "风元素伤害加成": 0,
+            "雷元素伤害加成": 15.000000596046448,
+            "草元素伤害加成": 0,
+            "冰元素伤害加成": 0,
+            "岩元素伤害加成": 0
+          },
+          "skills": { "a": { "style": "", "icon": "Skill_A_01", "level": MiaoChar.talent.a, "originLvl": MiaoChar.talent.a }, "e": { "style": "", "icon": "Skill_S_Player_01", "level": MiaoChar.talent.e, "originLvl": MiaoChar.talent.e }, "q": { "style": "", "icon": "Skill_E_Player", "level": MiaoChar.talent.q, "originLvl": MiaoChar.talent.q } }, "consts": [], "weapon": { "id": 114514, "rarity": 1919810, "name": MiaoChar.weapon.name, "affix": MiaoChar.weapon.affix, "level": MiaoChar.weapon.level, "icon": "牛逼啊", "main": 32767, "sub": { "prop": "涩涩之力", "value": "99.9%" } },
+          "relics": [],
+          "relicSet": {},
+          "relicCalc": {},
+          "damage": {},
+          "time": MiaoChar._time
+        }
 
 
         switch (result.element) {
@@ -231,7 +230,7 @@ export class MiaoToGspanel extends plugin {
             result.icon = "UI_AvatarIcon_PlayerGirl"
             result.gachaAvatarImg = "UI_Gacha_AvatarImg_PlayerGirl"
           }
-          //SKIP：result.consts是命座信息，但是旅行者的图标我找不到！开摆！
+          result.consts = [{ "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][0] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][1] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][2] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][3] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][4] }, { "style": "", "icon": PlayerElem_To_ConsIconName[`${result.element}`][5] }]
         } else {
           //char_Gspanel：Gspanel的具体一个角色的资料
           let char_Gspanel = char_data_Gspanel[MiaoChar.id]
@@ -248,23 +247,23 @@ export class MiaoToGspanel extends plugin {
           result.skills.a.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[0]]
           result.skills.e.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[1]]
           result.skills.q.icon = char_Gspanel.Skills[char_Gspanel.SkillOrder[2]]
-          result.consts = JSON.parse(`[{"style":"","icon":"${char_Gspanel.Consts[0]}"},{"style":"","icon":"${char_Gspanel.Consts[1]}"},{"style":"","icon":"${char_Gspanel.Consts[2]}"},{"style":"","icon":"${char_Gspanel.Consts[3]}"},{"style":"","icon":"${char_Gspanel.Consts[4]}"},{"style":"","icon":"${char_Gspanel.Consts[5]}"}]`)
-          switch (result.cons) {
-            case 0:
-              result.consts[0].style = "off"
-            case 1:
-              result.consts[1].style = "off"
-            case 2:
-              result.consts[2].style = "off"
-            case 3:
-              result.consts[3].style = "off"
-            case 4:
-              result.consts[4].style = "off"
-            case 5:
-              result.consts[5].style = "off"
-          }
+          result.consts = [{ "style": "", "icon": char_Gspanel.Consts[0] }, { "style": "", "icon": char_Gspanel.Consts[1] }, { "style": "", "icon": char_Gspanel.Consts[2] }, { "style": "", "icon": char_Gspanel.Consts[3] }, { "style": "", "icon": char_Gspanel.Consts[4] }, { "style": "", "icon": char_Gspanel.Consts[5] }]
         }
-
+        switch (result.cons) {
+          //根据命座决定图标是否亮起
+          case 0:
+            result.consts[0].style = "off"
+          case 1:
+            result.consts[1].style = "off"
+          case 2:
+            result.consts[2].style = "off"
+          case 3:
+            result.consts[3].style = "off"
+          case 4:
+            result.consts[4].style = "off"
+          case 5:
+            result.consts[5].style = "off"
+        }
         let weaponType = "catalyst"
         //默认法器
         switch (result.skills.a.icon) {
