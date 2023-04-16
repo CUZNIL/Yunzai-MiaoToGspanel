@@ -1,7 +1,7 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月16日00:50:33
+2023年4月16日17:30:02
 //*/
 
 let MiaoPath = "data/UserData/"
@@ -76,12 +76,16 @@ try {
     console.log(`${logger.red(`${pluginINFO}${e2}\n${pluginINFO}没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
   }
 }
-
-let trans = {
-  //部分没必要更新的数据，直接写在这里拿来用了。
+//dataRelicSet:圣遗物名称→id + id→套装效果(仅关注属性)
+let dataRelicSet
+//部分没必要更新的数据，直接写在这里拿来用了。transElement和trans。
+let transElement = {
   "pyro": "火", "hydro": "水", "cryo": "冰", "electro": "雷", "anemo": "风", "geo": "岩", "dendro": "草",
+}
+let trans = {
   "Skill_A_Catalyst_MD": "catalyst", "Skill_A_01": "sword", "Skill_A_02": "bow", "Skill_A_03": "polearm", "Skill_A_04": "claymore",
   "WeaponPromote": [1, 20, 40, 50, 60, 70, 80, 90],
+  "hpPlus": "生命值", "hp": "生命值百分比", "atkPlus": "攻击力", "atk": "攻击力百分比", "defPlus": "防御力", "def": "防御力百分比", "recharge": "充能效率", "mastery": "元素精通", "cpct": "暴击率", "cdmg": "暴击伤害", "heal": "治疗加成", "pyro": "火伤加成", "electro": "雷伤加成", "cryo": "冰伤加成", "hydro": "水伤加成", "anemo": "风伤加成", "geo": "岩伤加成", "dendro": "草伤加成", "phy": "物伤加成",
 }
 export class MiaoToGspanel extends plugin {
   constructor() {
@@ -113,6 +117,11 @@ export class MiaoToGspanel extends plugin {
         },
         {
           reg: '^#?属性映射更新$',
+          fnc: 'attrUpdate',
+          permission: 'master'
+        },
+        {
+          reg: '^#?圣遗物套装更新$',
           fnc: 'relicUpdate',
           permission: 'master'
         },
@@ -203,7 +212,7 @@ export class MiaoToGspanel extends plugin {
           "rarity": char_Miao.star,
           "name": MiaoChar.name,
           "slogan": char_Miao.title,
-          "element": trans[MiaoChar.elem],
+          "element": transElement[MiaoChar.elem],
           "cons": MiaoChar.cons,
           "fetter": MiaoChar.fetter,
           "level": MiaoChar.level,
@@ -417,6 +426,7 @@ export class MiaoToGspanel extends plugin {
     return uid
   }
   async weaponUpdate() {
+    //#武器数据更新
     //数据来源：https://gitlab.com/Dimbreath/AnimeGameData/-/blob/master/ExcelBinOutput/WeaponExcelConfigData.json
     let TimeStart = await new Date().getTime()
     try {
@@ -440,6 +450,7 @@ export class MiaoToGspanel extends plugin {
     }
   }
   async playerUpdate() {
+    //#主角命座更新
     //数据来源：https://gitlab.com/Dimbreath/AnimeGameData/-/blob/master/ExcelBinOutput/AvatarTalentExcelConfigData.json
     let TimeStart = await new Date().getTime()
     try {
@@ -465,51 +476,62 @@ export class MiaoToGspanel extends plugin {
       this.reply(`更新失败了呜呜呜，请检查后台日志确认原因。用时${TimeEnd - TimeStart}ms`)
     }
   }
-  async relicUpdate() {
+  async attrUpdate() {
+    //#属性映射更新
     //数据来源：https://gitee.com/yoimiya-kokomi/miao-plugin/blob/master/resources/meta/artifact/meta.js
-    let ori = fs.readFileSync(MiaoResourecePath.concat("artifact/meta.js")).toString()
-    let startM = ori.indexOf("mainIdMap")
-    let startA = ori.indexOf("attrIdMap")
-    if (startM == -1 || startA == -1) {
-      this.reply(`【更新失败】\n怎么辉石呢？没有在文件${MiaoResourecePath}artifact/meta.js里找到mainIdMap、attrIdMap呢orz`)
-      return false
+    let TimeStart = await new Date().getTime()
+    try {
+      let ori = fs.readFileSync(MiaoResourecePath.concat("artifact/meta.js")).toString()
+      let startM = ori.indexOf("mainIdMap")
+      let startA = ori.indexOf("attrIdMap")
+      if (startM == -1 || startA == -1) {
+        this.reply(`【更新失败】\n怎么辉石呢？没有在文件${MiaoResourecePath}artifact/meta.js里找到mainIdMap、attrIdMap呢orz`)
+        return false
+      }
+      let endM = startA
+      let endA = ori.length
+      while (ori[startM] != '{') startM++
+      while (ori[startA] != '{') startA++
+      while (ori[endM] != '}') endM--
+      ori = ori.substring(startM, endM) + ',' + ori.substring(startA + 1, endA - 1)
+      ori = ori.replaceAll("'", "")
+      ori = ori.replaceAll(/(\w|\.)+/g, `"$&"`)
+      ori = JSON.parse(ori.concat("}"))
+      for (let i in ori) try { ori[i].value = Number((Number(ori[i].value)).toFixed(5)) } catch (e) { }
+      fs.writeFileSync(resource.concat("attr_map.json"), JSON.stringify(ori))
+      attr_map = ori
+      let TimeEnd = await new Date().getTime()
+      this.reply(`成功更新属性映射数据~\n本次更新总计用时${TimeEnd - TimeStart}ms~`)
+    } catch (e) {
+      console.log(pluginINFO.concat(e))
+      let TimeEnd = await new Date().getTime()
+      this.reply(`更新失败了呜呜呜，请检查后台日志确认原因。用时${TimeEnd - TimeStart}ms`)
     }
-    let endM = startA
-    let endA = ori.length
-    while (ori[startM] != '{') startM++
-    while (ori[startA] != '{') startA++
-    while (ori[endM] != '}') endM--
+  }
 
-    ori = ori.substring(startM, endM) + ',' + ori.substring(startA + 1, endA - 1)
-    ori = ori.replaceAll("'", "")
-    ori = ori.replaceAll(/(\w|\.)+/g, `"$&"`)
-    //ori = ori.replaceAll(`"."`, `.`)
-    //请手动更改translate为  "原文":"译文",   这样的格式，最后一行不要带逗号。
-    let translate = `
-    "hpPlus":"生命值",
-    "hp":"生命值",
-    "atkPlus":"攻击力",
-    "atk":"攻击力",
-    "defPlus":"防御力",
-    "def":"防御力",
-    "recharge":"充能效率",
-    "mastery":"元素精通",
-    "cpct":"暴击率",
-    "cdmg":"暴击伤害",
-    "heal":"治疗加成",
-    "pyro":"火伤加成",
-    "electro":"雷伤加成",
-    "cryo":"冰伤加成",
-    "hydro":"水伤加成",
-    "anemo":"风伤加成",
-    "geo":"岩伤加成",
-    "dendro":"草伤加成",
-    "phy":"物伤加成"
-    `
-    ori += ',' + translate + '}'
-    ori = JSON.parse(ori)
-    for (let i in ori) try { ori[i].value = Number((Number(ori[i].value)).toFixed(5)) } catch (e) { }
-    fs.writeFileSync(resource.concat("attr_map.json"), JSON.stringify(ori))
+  async relicUpdate() {
+    //#圣遗物套装更新
+    //数据来源：https://gitee.com/yoimiya-kokomi/miao-plugin/blob/master/resources/meta/artifact/data.json
+    //TODO：圣遗物名称→id + id→套装效果(仅关注属性)
+    let TimeStart = await new Date().getTime()
+    try {
+      let ori = JSON.parse(fs.readFileSync(MiaoResourecePath.concat("artifact/data.json")))
+      
+
+
+
+
+
+
+      fs.writeFileSync(resource.concat("dataRelicSet.json"), JSON.stringify(ori))
+      dataRelicSet = ori
+      let TimeEnd = await new Date().getTime()
+      this.reply(`成功更新圣遗物套装数据~\n本次更新总计用时${TimeEnd - TimeStart}ms~`)
+    } catch (e) {
+      console.log(pluginINFO.concat(e))
+      let TimeEnd = await new Date().getTime()
+      this.reply(`更新失败了呜呜呜，请检查后台日志确认原因。用时${TimeEnd - TimeStart}ms`)
+    }
   }
   async test() {
     let g = JSON.parse(fs.readFileSync(resource.concat("Gspanel.json")))
