@@ -1,7 +1,7 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月16日17:30:02
+2023年4月17日00:31:58
 //*/
 
 let MiaoPath = "data/UserData/"
@@ -76,8 +76,21 @@ try {
     console.log(`${logger.red(`${pluginINFO}${e2}\n${pluginINFO}没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
   }
 }
-//dataRelicSet:圣遗物名称→id + id→套装效果(仅关注属性)
+//dataRelicSet:圣遗物名称→套装名称 套装名称→套装id 套装id→套装效果
 let dataRelicSet
+try {
+  dataRelicSet = JSON.parse(fs.readFileSync(resource.concat("dataRelicSet.json")))
+} catch (e) {
+  console.log(`${pluginINFO}${logger.red(e)}\n${pluginINFO}推测报错原因为没有插件运行必要的dataRelicSet.json，即将尝试下载该文件以便调用！`)
+  let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/dataRelicSet.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
+  logger.mark(`${pluginINFO}尝试下载中。。\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
+  console.log(`${pluginINFO}下载完毕！该文件可能过时！\n${pluginINFO}如出现圣遗物套装错误请发送#圣遗物套装更新 。\n下载位置：${resource}dataRelicSet.json`)
+  try {
+    dataRelicSet = JSON.parse(fs.readFileSync(resource.concat("dataRelicSet.json")))
+  } catch (e2) {
+    console.log(`${logger.red(`${pluginINFO}${e2}\n${pluginINFO}没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
+  }
+}
 //部分没必要更新的数据，直接写在这里拿来用了。transElement和trans。
 let transElement = {
   "pyro": "火", "hydro": "水", "cryo": "冰", "electro": "雷", "anemo": "风", "geo": "岩", "dendro": "草",
@@ -433,7 +446,7 @@ export class MiaoToGspanel extends plugin {
       await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitlab.com/Dimbreath/AnimeGameData/-/raw/master/ExcelBinOutput/WeaponExcelConfigData.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
       let TimeDownload = await new Date().getTime()
       let ori = JSON.parse(fs.readFileSync(resource.concat("WeaponExcelConfigData.json")))
-      let Teamp_WeaponID_To_IconName = {}
+      let Teamp_WeaponID_To_IconName = await {}
       for (let i in ori) {
         Teamp_WeaponID_To_IconName[ori[i].id] = ori[i].icon
       }
@@ -483,15 +496,15 @@ export class MiaoToGspanel extends plugin {
     try {
       let ori = fs.readFileSync(MiaoResourecePath.concat("artifact/meta.js")).toString()
       let startM = ori.indexOf("mainIdMap")
+      startM = ori.indexOf('{', startM)
       let startA = ori.indexOf("attrIdMap")
       if (startM == -1 || startA == -1) {
         this.reply(`【更新失败】\n怎么辉石呢？没有在文件${MiaoResourecePath}artifact/meta.js里找到mainIdMap、attrIdMap呢orz`)
         return false
       }
       let endM = startA
+      startA = ori.indexOf('{', startA)
       let endA = ori.length
-      while (ori[startM] != '{') startM++
-      while (ori[startA] != '{') startA++
       while (ori[endM] != '}') endM--
       ori = ori.substring(startM, endM) + ',' + ori.substring(startA + 1, endA - 1)
       ori = ori.replaceAll("'", "")
@@ -511,22 +524,71 @@ export class MiaoToGspanel extends plugin {
 
   async relicUpdate() {
     //#圣遗物套装更新
-    //数据来源：https://gitee.com/yoimiya-kokomi/miao-plugin/blob/master/resources/meta/artifact/data.json
-    //TODO：圣遗物名称→id + id→套装效果(仅关注属性)
+    //中文数据来源：https://gitee.com/yoimiya-kokomi/miao-plugin/blob/master/resources/meta/artifact/data.json
+    //圣遗物属性数据来源：https://gitee.com/yoimiya-kokomi/miao-plugin/blob/master/resources/meta/artifact/calc.js
+    //圣遗物id数据来源：https://gitlab.com/Dimbreath/AnimeGameData/-/blob/master/ExcelBinOutput/ReliquaryCodexExcelConfigData.json
     let TimeStart = await new Date().getTime()
     try {
-      let ori = JSON.parse(fs.readFileSync(MiaoResourecePath.concat("artifact/data.json")))
-      
-
-
-
-
-
-
-      fs.writeFileSync(resource.concat("dataRelicSet.json"), JSON.stringify(ori))
-      dataRelicSet = ori
+      let data_chs
+      try {
+        data_chs = JSON.parse(fs.readFileSync(MiaoResourecePath.concat("artifact/data.json")))
+      } catch (emiao) {
+        console.log(pluginINFO.concat(emiao))
+        let TimeEnd = await new Date().getTime()
+        this.reply(`更新失败，推测原因为未正确安装喵喵插件或未正确配置本js插件。请检查后台日志确认详细原因。\n用时${TimeEnd - TimeStart}ms`)
+        return false
+      }
+      this.reply(`该文件较大，可能需要下载一段时间。。。`)
+      console.log(pluginINFO.concat(`该文件较大，可能需要下载一段时间。。。`))
+      let TimeStartDownload = await new Date().getTime()
+      await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitlab.com/Dimbreath/AnimeGameData/-/raw/master/ExcelBinOutput/ReliquaryCodexExcelConfigData.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
+      let TimeDownload = await new Date().getTime()
+      console.log(pluginINFO.concat(`下载完成！用时${TimeDownload - TimeStartDownload}ms`))
+      let ori = JSON.parse(fs.readFileSync(resource.concat("ReliquaryCodexExcelConfigData.json")))
+      let capId_to_suitId = await {}
+      for (let i in ori) {
+        capId_to_suitId["n" + ori[i].capId] = ori[i].suitId
+      }
+      ori = fs.readFileSync(MiaoResourecePath.concat("artifact/calc.js")).toString().replaceAll(`'`, `"`).replaceAll(`Pct`, ``)
+      let relic = await {}
+      for (let i in data_chs) {
+        let set = await data_chs[i].sets
+        for (let j in set) {
+          //录入：圣遗物名称→套装名称
+          relic[set[j].name] = data_chs[i].name
+        }
+        let SetID = capId_to_suitId[set[5].id]
+        //录入：套装名称→套装id
+        relic[data_chs[i].name] = SetID
+        let start = ori.indexOf(data_chs[i].name)
+        let end = ori.indexOf(")", start)
+        let SetEffect = ori.substring(start, end)
+        if (SetEffect.includes("attr(")) {
+          //如果有需要考虑的套装效果再执行。由于所考虑的套装都是二件套，所以内容不再塞入生效套装数量，只存放属性名和数值
+          start = SetEffect.indexOf("attr(") + 5
+          SetEffect = JSON.parse(`[${SetEffect.substring(start)}]`)
+          if (SetEffect[0] == "shield") continue
+          if (SetEffect[0] == "dmg") {
+            SetEffect[0] = SetEffect[2].concat("伤加成")
+          } else {
+            let t = trans[SetEffect[0]]
+            if (t) {
+              SetEffect[0] = t
+            } else {
+              console.log(pluginINFO.concat(SetEffect[2]))
+            }
+          }
+          SetEffect = await [SetEffect[0], SetEffect[1]]
+          //录入：套装id→套装效果
+          relic[SetID] = SetEffect
+        }
+      }
+      let FileSize = fs.statSync(resource.concat("ReliquaryCodexExcelConfigData.json")).size
+      fs.rmSync(resource.concat("ReliquaryCodexExcelConfigData.json"))
+      fs.writeFileSync(resource.concat("dataRelicSet.json"), JSON.stringify(relic))
+      dataRelicSet = relic
       let TimeEnd = await new Date().getTime()
-      this.reply(`成功更新圣遗物套装数据~\n本次更新总计用时${TimeEnd - TimeStart}ms~`)
+      this.reply(`成功更新圣遗物套装数据~\n本次更新总计用时${TimeEnd - TimeStart}ms~\n其中下载资源花费${TimeDownload - TimeStartDownload}ms~\n为避免空间浪费删除了非必要文件：\nReliquaryCodexExcelConfigData.json\n文件大小${(FileSize / 1024).toFixed(2)}KB`)
     } catch (e) {
       console.log(pluginINFO.concat(e))
       let TimeEnd = await new Date().getTime()
@@ -534,6 +596,7 @@ export class MiaoToGspanel extends plugin {
     }
   }
   async test() {
+    //测试函数
     let g = JSON.parse(fs.readFileSync(resource.concat("Gspanel.json")))
     g = g.avatars
     let test = {}
