@@ -1,7 +1,7 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月17日00:31:58
+2023年4月19日00:57:30
 //*/
 
 let MiaoPath = "data/UserData/"
@@ -96,9 +96,14 @@ let transElement = {
   "pyro": "火", "hydro": "水", "cryo": "冰", "electro": "雷", "anemo": "风", "geo": "岩", "dendro": "草",
 }
 let trans = {
+  //技能A图标→武器类型
   "Skill_A_Catalyst_MD": "catalyst", "Skill_A_01": "sword", "Skill_A_02": "bow", "Skill_A_03": "polearm", "Skill_A_04": "claymore",
+  //武器突破等级
   "WeaponPromote": [1, 20, 40, 50, 60, 70, 80, 90],
+  //属性翻译，用于圣遗物副词条。
   "hpPlus": "生命值", "hp": "生命值百分比", "atkPlus": "攻击力", "atk": "攻击力百分比", "defPlus": "防御力", "def": "防御力百分比", "recharge": "充能效率", "mastery": "元素精通", "cpct": "暴击率", "cdmg": "暴击伤害", "heal": "治疗加成", "pyro": "火伤加成", "electro": "雷伤加成", "cryo": "冰伤加成", "hydro": "水伤加成", "anemo": "风伤加成", "geo": "岩伤加成", "dendro": "草伤加成", "phy": "物伤加成",
+  //圣遗物位置→圣遗物id结尾
+  "1": 4, "2": 2, "3": 5, "4": 1, "5": 3,
 }
 export class MiaoToGspanel extends plugin {
   constructor() {
@@ -114,8 +119,7 @@ export class MiaoToGspanel extends plugin {
         },
         {
           reg: '^#?转换(喵喵|PY)?面板(\\d{9})?$',
-          fnc: 'M2G_query',
-          permission: 'master'
+          fnc: 'M2G_query'
         },
         //以下命令都是尝试主动更新数据，如果你没有遇到BUG请不要尝试发送以下命令(以免bug)
         {
@@ -172,7 +176,6 @@ export class MiaoToGspanel extends plugin {
           fail++
       }
     }
-    if (!fail) console.log(pluginINFO.concat(`恭喜捏，没报错。`))
     await fs.writeFileSync(await GspanelPath.concat("../qq-uid.json"), JSON.stringify(qq2uid))
     let TimeEnd = await new Date().getTime()
     this.reply(`报告主人！本次转换总计统计到${succeed + fail + empty}个uid，其中：\n${succeed ? `成功转换${succeed}个面板数据！` : "我超，所有转换都失败了，牛逼！"}\n${empty ? `没有面板数据的有${empty}个` : "没发现没有面板数据的用户"}！\n${fail ? `转换失败的有${fail}个(请检查日志输出)` : "没有出现转换失败(好耶)"}！\n本次转换总计用时${TimeEnd - TimeStart}ms~`)
@@ -271,8 +274,26 @@ export class MiaoToGspanel extends plugin {
           },
           "relics": [],
           "relicSet": {},
-          "relicCalc": {},
-          "damage": {},
+          "relicCalc": {
+            "rank": "ACE",
+            "total": 233.3
+          },
+          "damage": {
+            "level": "玩得好就是挂？",
+            "data": [
+              [
+                "普攻第一段伤害",
+                "2147483647",
+                "2147483647"
+              ]
+            ],
+            "buff": [
+              [
+                "大伟哥的注视",
+                "所有伤害都能对怪物造成即死效果，且跳过死亡动画。"
+              ]
+            ]
+          },
           "time": MiaoChar._time
         }
         if (result.cons >= char_Miao.talentCons.e) {
@@ -345,9 +366,6 @@ export class MiaoToGspanel extends plugin {
         }
         result.weapon.rarity = weapon_miao.star
         result.weapon.sub.prop = weapon_miao.attr.bonusKey
-
-
-
         let weaponUP = trans.WeaponPromote[MiaoChar.weapon.promote + 1]
         let weaponDN = trans.WeaponPromote[MiaoChar.weapon.promote]
         if (!MiaoChar.weapon.promote) {
@@ -357,82 +375,108 @@ export class MiaoToGspanel extends plugin {
         }
         result.weapon.main = await Number((((weapon_miao.attr.atk[`${weaponUP}`] - weapon_miao.attr.atk[`${weaponDN}+`]) * result.weapon.level - weapon_miao.attr.atk[`${weaponUP}`] * weaponDN + weapon_miao.attr.atk[`${weaponDN}+`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2))
         result.weapon.sub.value = await (((weapon_miao.attr.bonusData[`${weaponUP}`] - weapon_miao.attr.bonusData[`${weaponDN}+`]) * result.weapon.level - weapon_miao.attr.bonusData[`${weaponUP}`] * weaponDN + weapon_miao.attr.bonusData[`${weaponDN}+`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2)
-
-        let artis = {
-          "pos": 1,
-          "rarity": 4,
-          "name": "赌徒的胸花",
-          "setName": "赌徒",
-          "level": 16,
-          "main": {
-            "prop": "生命值",
-            "value": "3571"
-          },
-          "sub": [
-            {
-              "prop": "充能效率",
-              "value": "13%"
-            },
-            {
-              "prop": "攻击力",
-              "value": "3.7%"
-            },
-            {
-              "prop": "生命值",
-              "value": "3.7%"
-            },
-            {
-              "prop": "攻击力",
-              "value": "12"
+        for (let j in MiaoChar.artis) {
+          //MiaoArtis：Miao的具体圣遗物
+          let MiaoArtis = MiaoChar.artis[j]
+          if (MiaoArtis.main == undefined) {
+            //TODO：如果没有主词条数据，则表示是新版喵喵数据，采用属性ID。那么预先处理一下属性ID转为旧版喵喵数据的{key,value}的格式
+            MiaoArtis.main = {
+              "key": attr_map[MiaoArtis.mainId],
+              "value": 0
             }
-          ],
-          "calc": {
-            "rank": "C",
-            "total": 13.4,
-            "nohit": 1,
-            "main": 0.0,
+            console.log(MiaoArtis)
+          }
+          //artis：Gspanel的具体圣遗物
+          let artis = {
+            "pos": Number(j),
+            "rarity": MiaoArtis.star,
+            "name": MiaoArtis.name,
+            "setName": dataRelicSet[MiaoArtis.name],
+            "level": MiaoArtis.level,
+            "main": {
+              "prop": "生命值",
+              "value": "3571"
+            },
             "sub": [
               {
-                "style": "use",
-                "goal": 8.6
+                "prop": "充能效率",
+                "value": "13%"
               },
               {
-                "style": "use",
-                "goal": 3.7
+                "prop": "攻击力",
+                "value": "3.7%"
               },
               {
-                "style": "unuse",
-                "goal": 0.0
+                "prop": "生命值",
+                "value": "3.7%"
               },
               {
-                "style": "use",
-                "goal": 1.5
+                "prop": "攻击力",
+                "value": "12"
               }
             ],
-            "main_pct": 100,
-            "total_pct": 97.1
-          },
-          "icon": "UI_RelicIcon_10008_4"
+            "calc": {
+              //你好！评分部分我先暂时搁置了！因为我个人只需要队伍伤害，该功能不需要评分。
+              "rank": "ACE",
+              "total": 66.6,
+              "nohit": 45,
+              "main": 77.7,
+              "sub": [
+                {
+                  "style": "great",
+                  "goal": 6.6
+                },
+                {
+                  "style": "use",
+                  "goal": 5.5
+                },
+                {
+                  "style": "unuse",
+                  "goal": 4.4
+                },
+                {
+                  "style": "great",
+                  "goal": 3.3
+                }
+              ],
+              "main_pct": 100.0,
+              "total_pct": 98.7
+            },
+            "icon": `UI_RelicIcon_${dataRelicSet[dataRelicSet[MiaoArtis.name]]}_${trans[j]}`
+          }
+          if (result.relicSet[artis.setName])
+            result.relicSet[artis.setName]++
+          else
+            result.relicSet[artis.setName] = 1
+          //TODO：接下来处理artis.main、artis.sub、fightProp
+
+
+
+          result.relics[result.relics.length] = artis
         }
-        //TODO：fightProp relics relicSet relicCalc damage
+        for (let j in result.relicSet) {
+          let Effect = dataRelicSet[dataRelicSet[j]]
+          if (Effect != undefined && result.relicSet[j] >= 2) {
+            //仅当二件套触发且效果为属性时尝试转换
+            if (Effect[0].includes("百分比")) {
+              Effect[0] = Effect[0].replace("百分比", "")
+              Effect[1] = result.baseProp[Effect[0]] * Effect[1] / 100
+            }
+            result.fightProp[Effect[0]] += Effect[1]
+          }
+        }
+        //TODO：fightProp relics
 
         Gspanel.avatars[Gspanel.avatars.length] = result
+        //SKIP：relics[i].calc relicCalc damage
       }
       fs.writeFileSync(await GspanelPath.concat(`${uid}.json`), JSON.stringify(Gspanel))
-
       return true
     } catch (e) {
       console.log(logger.red(`${pluginINFO}UID${uid}报错：\n${e}`))
       return false
     }
   }
-
-
-
-
-
-
-
   async findUID(QQ) {
     //根据QQ号判断对应uid，返回null表示没有对应uid。
     let uid = await redis.get(redisStart.concat(`${QQ}`))
@@ -521,7 +565,6 @@ export class MiaoToGspanel extends plugin {
       this.reply(`更新失败了呜呜呜，请检查后台日志确认原因。用时${TimeEnd - TimeStart}ms`)
     }
   }
-
   async relicUpdate() {
     //#圣遗物套装更新
     //中文数据来源：https://gitee.com/yoimiya-kokomi/miao-plugin/blob/master/resources/meta/artifact/data.json
@@ -569,13 +612,21 @@ export class MiaoToGspanel extends plugin {
           SetEffect = JSON.parse(`[${SetEffect.substring(start)}]`)
           if (SetEffect[0] == "shield") continue
           if (SetEffect[0] == "dmg") {
-            SetEffect[0] = SetEffect[2].concat("伤加成")
+            SetEffect[0] = SetEffect[2].concat("元素伤害加成")
           } else {
-            let t = trans[SetEffect[0]]
-            if (t) {
-              SetEffect[0] = t
+            if (SetEffect[0] == "phy") {
+              SetEffect[0] = "物理伤害加成"
             } else {
-              console.log(pluginINFO.concat(SetEffect[2]))
+              if (SetEffect[0] == "recharge") {
+                SetEffect[0] = "元素充能效率"
+              } else {
+                let t = trans[SetEffect[0]]
+                if (t) {
+                  SetEffect[0] = t
+                } else {
+                  console.log(pluginINFO.concat(SetEffect[2]))
+                }
+              }
             }
           }
           SetEffect = await [SetEffect[0], SetEffect[1]]
@@ -597,19 +648,11 @@ export class MiaoToGspanel extends plugin {
   }
   async test() {
     //测试函数
-    let g = JSON.parse(fs.readFileSync(resource.concat("Gspanel.json")))
-    g = g.avatars
-    let test = {}
-    for (let i in g) {
-      let a = g[i].relics
-      for (let j in a) {
-        test[a[j].main.prop] = a[j].main.value
-        let b = a[j].sub
-        for (let j in b) {
-          test[b[j].prop] = b[j].value
-        }
-      }
-    }
+    let test = { a: 0 }
+    test.a += 1
+    let t = 5
+    //test.b ? test.b += t : test.b = t
+    test.b = t + test.b ? test.b : 0
     fs.writeFileSync(resource.concat("test.json"), JSON.stringify(test))
   }
 }
