@@ -3,12 +3,4 @@
 #### 介绍
 将[喵喵插件](../../../../yoimiya-kokomi/miao-plugin)产生的面板数据适配到[Gspanel](https://github.com/monsterxcn/nonebot-plugin-gspanel)，以便在Gspanel使用。
 
-等我写完了再来整README。（欢迎有能力的大佬来提pr！没啥要求，能跑就行！）
-
-（所以说为什么不能都直接用enka接口的数据格式:sob: ）
-
-当前进度 早睡早起
-
-TODO
-修正面板数据，在对应目录生成文件。返回值表示处理结果(true：转换成功，false：转换失败)。
-README
+当前已经可以正常使用了，和其他js的安装方式均一致。README有空再写
