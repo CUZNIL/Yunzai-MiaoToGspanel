@@ -1,12 +1,11 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月19日00:57:30
+2023年4月20日00:04:45
 //*/
 
 let MiaoPath = "data/UserData/"
-let GspanelPath = "plugins/py-plugin/data/gspanel/cache_test/"
-//尚未开发完全，新建cache_test文件夹做为测试区域
+let GspanelPath = "plugins/py-plugin/data/gspanel/cache/"
 let MiaoResourecePath = "plugins/miao-plugin/resources/meta/"
 
 /*
@@ -23,70 +22,61 @@ import fs from 'node:fs'
 let redisStart = "Yz:genshin:mys:qq-uid:"
 let errorTIP = "请仔细阅读README，你没有正确配置！可能是以下原因：\n1.你不是通过py-plugin安装的nonebot-plugin-gspanel\n2.你没有正确配置nonebot-plugin-gspanel\n3.你没有正确配置本js插件\n。。。\n为解决本问题请自行阅读https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel"
 let pluginINFO = "【MiaoToGspanel插件】"
-//resource:该插件产生的中间文件存放的文件夹位置，如需修改请自行创建对应文件夹。
+let thisRepoDownload = "https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/"
+let GenshinDataRepoDownload = "https://gitlab.com/Dimbreath/AnimeGameData/-/raw/master/ExcelBinOutput/"
+//resource:该插件产生的中间文件存放的文件夹位置，如需修改请自行创建对应文件夹。download函数会默认下载文件到该位置。
 let resource = "resources/MiaoToGspanel/"
 if (!fs.existsSync(`${resource}`)) {
-  console.log(`${pluginINFO}检测到没有文件夹${resource}！即将创建该文件夹用于存放部分数据。`)
+  console.log(`${pluginINFO}检测到没有文件夹${resource}！即将创建该文件夹用于存放插件运行必要的数据！`)
   fs.mkdirSync(`${resource}`)
+  await download(thisRepoDownload, "WeaponID_To_IconName.json")
+  await download(thisRepoDownload, "PlayerElem_To_ConsIconName.json")
+  await download(thisRepoDownload, "attr_map.json")
+  await download(thisRepoDownload, "dataRelicSet.json")
+  await download(thisRepoDownload, "dataRelicMain.json")
 }
 //char_data_Gspanel:Gspanel面板的所有角色的资料
-let char_data_Gspanel = JSON.parse(fs.readFileSync(GspanelPath.concat("../char-data.json")))
+let char_data_Gspanel = JSON.parse(fs.readFileSync(GspanelPath + "../char-data.json"))
 //WeaponID_To_IconName:武器ID到图标名称的映射
 let WeaponID_To_IconName
-try {
-  WeaponID_To_IconName = JSON.parse(fs.readFileSync(resource.concat("WeaponID_To_IconName.json")))
-} catch (e) {
-  console.log(`${pluginINFO}${logger.red(e)}\n${pluginINFO}推测报错原因为没有插件运行必要的WeaponID_To_IconName.json，即将尝试下载该文件以便调用！`)
-  let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/WeaponID_To_IconName.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
-  logger.mark(`${pluginINFO}尝试下载中。。\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
-  console.log(`${pluginINFO}下载完毕！该文件可能过时！\n${pluginINFO}如出现武器图标错误请发送#武器数据更新 。\n下载位置：${resource}WeaponID_To_IconName.json`)
-  try {
-    WeaponID_To_IconName = JSON.parse(fs.readFileSync(resource.concat("WeaponID_To_IconName.json")))
-  } catch (e2) {
-    console.log(`${logger.red(`${pluginINFO}${e2}\n${pluginINFO}没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
-  }
-}
 //PlayerElem_To_ConsIconName:旅行者元素到命座图标的映射
 let PlayerElem_To_ConsIconName
-try {
-  PlayerElem_To_ConsIconName = JSON.parse(fs.readFileSync(resource.concat("PlayerElem_To_ConsIconName.json")))
-} catch (e) {
-  console.log(`${pluginINFO}${logger.red(e)}\n${pluginINFO}推测报错原因为没有插件运行必要的PlayerElem_To_ConsIconName.json，即将尝试下载该文件以便调用！`)
-  let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/PlayerElem_To_ConsIconName.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
-  logger.mark(`${pluginINFO}尝试下载中。。\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
-  console.log(`${pluginINFO}下载完毕！该文件可能过时！\n${pluginINFO}如出现旅行者命座图标错误请发送#主角命座更新 。\n下载位置：${resource}PlayerElem_To_ConsIconName.json`)
-  try {
-    PlayerElem_To_ConsIconName = JSON.parse(fs.readFileSync(resource.concat("PlayerElem_To_ConsIconName.json")))
-  } catch (e2) {
-    console.log(`${logger.red(`${pluginINFO}${e2}\n${pluginINFO}没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
-  }
-}
 //attr_map:属性id到属性英文的映射+属性英文到属性中文的映射
 let attr_map
-try {
-  attr_map = JSON.parse(fs.readFileSync(resource.concat("attr_map.json")))
-} catch (e) {
-  console.log(`${pluginINFO}${logger.red(e)}\n${pluginINFO}推测报错原因为没有插件运行必要的attr_map.json，即将尝试下载该文件以便调用！`)
-  let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/attr_map.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
-  logger.mark(`${pluginINFO}尝试下载中。。\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
-  console.log(`${pluginINFO}下载完毕！该文件可能过时！\n${pluginINFO}如出现属性昵称错误请发送#属性映射更新 。\n下载位置：${resource}attr_map.json`)
-  try {
-    attr_map = JSON.parse(fs.readFileSync(resource.concat("attr_map.json")))
-  } catch (e2) {
-    console.log(`${logger.red(`${pluginINFO}${e2}\n${pluginINFO}没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
-  }
-}
 //dataRelicSet:圣遗物名称→套装名称 套装名称→套装id 套装id→套装效果
 let dataRelicSet
+//dataRelicMain:圣遗物主词条→[星级→[等级→数值]]
+let dataRelicMain
 try {
-  dataRelicSet = JSON.parse(fs.readFileSync(resource.concat("dataRelicSet.json")))
+  WeaponID_To_IconName = JSON.parse(fs.readFileSync(resource + "WeaponID_To_IconName.json"))
+  PlayerElem_To_ConsIconName = JSON.parse(fs.readFileSync(resource + "PlayerElem_To_ConsIconName.json"))
+  attr_map = JSON.parse(fs.readFileSync(resource + "attr_map.json"))
+  dataRelicSet = JSON.parse(fs.readFileSync(resource + "dataRelicSet.json"))
+  dataRelicMain = JSON.parse(fs.readFileSync(resource + "dataRelicMain.json"))
 } catch (e) {
-  console.log(`${pluginINFO}${logger.red(e)}\n${pluginINFO}推测报错原因为没有插件运行必要的dataRelicSet.json，即将尝试下载该文件以便调用！`)
-  let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/dataRelicSet.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
-  logger.mark(`${pluginINFO}尝试下载中。。\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
+  console.log(`${pluginINFO}${logger.red(e)}\n${pluginINFO}推测报错原因为没有插件运行必要的文件，即将尝试下载所有文件以便调用！`)
+
+  await download(thisRepoDownload, "WeaponID_To_IconName.json")
+  console.log(`${pluginINFO}下载完毕！该文件可能过时！\n${pluginINFO}如出现武器图标错误请发送#武器数据更新 。\n下载位置：${resource}WeaponID_To_IconName.json`)
+
+  await download(thisRepoDownload, "PlayerElem_To_ConsIconName.json")
+  console.log(`${pluginINFO}下载完毕！该文件可能过时！\n${pluginINFO}如出现旅行者命座图标错误请发送#主角命座更新 。\n下载位置：${resource}PlayerElem_To_ConsIconName.json`)
+
+  await download(thisRepoDownload, "attr_map.json")
+  console.log(`${pluginINFO}下载完毕！该文件可能过时！\n${pluginINFO}如出现属性昵称错误请发送#属性映射更新 。\n下载位置：${resource}attr_map.json`)
+
+  await download(thisRepoDownload, "dataRelicSet.json")
   console.log(`${pluginINFO}下载完毕！该文件可能过时！\n${pluginINFO}如出现圣遗物套装错误请发送#圣遗物套装更新 。\n下载位置：${resource}dataRelicSet.json`)
+
+  await download(thisRepoDownload, "dataRelicMain.json")
+  console.log(`${pluginINFO}下载完毕！该文件可能过时！\n${pluginINFO}如出现圣遗物主词条大小错误请发送#圣遗物主词条更新 。\n下载位置：${resource}dataRelicMain.json`)
+
   try {
-    dataRelicSet = JSON.parse(fs.readFileSync(resource.concat("dataRelicSet.json")))
+    WeaponID_To_IconName = JSON.parse(fs.readFileSync(resource + "WeaponID_To_IconName.json"))
+    PlayerElem_To_ConsIconName = JSON.parse(fs.readFileSync(resource + "PlayerElem_To_ConsIconName.json"))
+    attr_map = JSON.parse(fs.readFileSync(resource + "attr_map.json"))
+    dataRelicSet = JSON.parse(fs.readFileSync(resource + "dataRelicSet.json"))
+    dataRelicMain = JSON.parse(fs.readFileSync(resource + "dataRelicMain.json"))
   } catch (e2) {
     console.log(`${logger.red(`${pluginINFO}${e2}\n${pluginINFO}没有解决报错！请将日志反馈到下面的项目地址处！\nhttps://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/issues\n反馈issue可以帮助改善插件！`)}`)
   }
@@ -96,11 +86,11 @@ let transElement = {
   "pyro": "火", "hydro": "水", "cryo": "冰", "electro": "雷", "anemo": "风", "geo": "岩", "dendro": "草",
 }
 let trans = {
-  //技能A图标→武器类型
-  "Skill_A_Catalyst_MD": "catalyst", "Skill_A_01": "sword", "Skill_A_02": "bow", "Skill_A_03": "polearm", "Skill_A_04": "claymore",
-  //武器突破等级
-  "WeaponPromote": [1, 20, 40, 50, 60, 70, 80, 90],
-  //属性翻译，用于圣遗物副词条。
+  //突破等级
+  "Promote": [1, 20, 40, 50, 60, 70, 80, 90],
+  //属性翻译，用于武器副词条、突破属性等。
+  "hpPct": "生命值百分比", "atkPct": "攻击力百分比", "defPct": "防御力百分比", "dmg": "伤加成",
+  //属性翻译，用于圣遗物词条。
   "hpPlus": "生命值", "hp": "生命值百分比", "atkPlus": "攻击力", "atk": "攻击力百分比", "defPlus": "防御力", "def": "防御力百分比", "recharge": "充能效率", "mastery": "元素精通", "cpct": "暴击率", "cdmg": "暴击伤害", "heal": "治疗加成", "pyro": "火伤加成", "electro": "雷伤加成", "cryo": "冰伤加成", "hydro": "水伤加成", "anemo": "风伤加成", "geo": "岩伤加成", "dendro": "草伤加成", "phy": "物伤加成",
   //圣遗物位置→圣遗物id结尾
   "1": 4, "2": 2, "3": 5, "4": 1, "5": 3,
@@ -143,6 +133,11 @@ export class MiaoToGspanel extends plugin {
           permission: 'master'
         },
         {
+          reg: '^#?圣遗物主词条更新$',
+          fnc: 'relicMainUpdate',
+          permission: 'master'
+        },
+        {
           reg: '^#?测试$',
           fnc: 'test',
           permission: 'master'
@@ -156,20 +151,26 @@ export class MiaoToGspanel extends plugin {
       return false
     }
     let TimeStart = new Date().getTime()
-    let KEYtoUID = await redis.keys(redisStart.concat("*"))
-    let qq2uid = JSON.parse(fs.readFileSync(GspanelPath.concat("../qq-uid.json")))
+    let KEYtoUID = await redis.keys(redisStart + "*")
+    let qq2uid = JSON.parse(fs.readFileSync(GspanelPath + "../qq-uid.json"))
     let succeed = 0
     let fail = 0
     let empty = 0
-    console.log(pluginINFO.concat(`开始转换${KEYtoUID.length}个uid，下面是转换失败的数据对应的uid和报错信息。`))
+    console.log(pluginINFO + `开始转换${KEYtoUID.length}个uid，下面是转换失败的数据对应的uid和报错信息。`)
     if (KEYtoUID.length > 200) this.reply(`redis里存了${KEYtoUID.length}个uid呢，可能要转换半分钟左右哦。`)
+    let TimeLastLog = new Date().getTime()
     for (let key of KEYtoUID) {
       let uid = await redis.get(key)
-      if (!fs.existsSync(MiaoPath.concat(`${uid}.json`))) {
+      if (!fs.existsSync(MiaoPath + `${uid}.json`)) {
         empty++
       } else {
         let qq = await key.match(/\d+/g)
         let result = await this.M2G(uid)
+        let TimeNow = await new Date().getTime()
+        if (TimeNow - TimeLastLog > 300) {
+          console.log(pluginINFO + `当前转换进度：${succeed + fail + empty}/${KEYtoUID.length}`)
+          TimeLastLog = TimeNow
+        }
         qq2uid[qq] = uid
         if (result) succeed++
         else
@@ -178,7 +179,7 @@ export class MiaoToGspanel extends plugin {
     }
     await fs.writeFileSync(await GspanelPath.concat("../qq-uid.json"), JSON.stringify(qq2uid))
     let TimeEnd = await new Date().getTime()
-    this.reply(`报告主人！本次转换总计统计到${succeed + fail + empty}个uid，其中：\n${succeed ? `成功转换${succeed}个面板数据！` : "我超，所有转换都失败了，牛逼！"}\n${empty ? `没有面板数据的有${empty}个` : "没发现没有面板数据的用户"}！\n${fail ? `转换失败的有${fail}个(请检查日志输出)` : "没有出现转换失败(好耶)"}！\n本次转换总计用时${TimeEnd - TimeStart}ms~`)
+    this.reply(`报告主人！本次转换总计统计到${succeed + fail + empty}个uid，其中：\n${succeed ? `成功转换${succeed}个面板数据！` : "我超，所有转换都失败了，牛逼！"}\n${empty ? `没有面板数据的有${empty}个` : "没发现没有面板数据的用户"}！\n${fail ? `转换失败的有${fail}个(请检查日志输出)` : "没有出现转换失败(好耶)"}！\n本次转换总计用时${((TimeEnd - TimeStart) / 1000).toFixed(1)}s~`)
   }
   async M2G_query() {
     if (!fs.existsSync(GspanelPath)) {
@@ -214,12 +215,14 @@ export class MiaoToGspanel extends plugin {
       //调用前已经判断过该uid一定有面板数据，并且所有路径无误，所以接下来就是修改面板数据以适配Gspanel
       //修正面板数据，在对应目录生成文件。返回值表示处理结果(true：转换成功，false：转换失败)
       let Miao = JSON.parse(fs.readFileSync(MiaoPath.concat(`${uid}.json`)))
-      let Gspanel = { "avatars": [], "next": Miao._profile }
+      let Gspanel = { "avatars": [], "next": Math.floor(Miao._profile / 1000) }
       for (let i in Miao.avatars) {
         //MiaoChar：喵喵面板的具体一个角色的数据
         let MiaoChar = Miao.avatars[i]
         //如果数据来源是米游社，那根本就不会有带圣遗物的面板数据，取消执行。Miao的数据似乎有点问题，米游社来源可能误标enka，需要后期检查。
         if (MiaoChar._source == "mys") continue;
+        //用参数NoData标记本面板是否有足量数据（具体来讲，是否有圣遗物详情）
+        let NoData = null
         //char_Miao：喵喵的具体一个角色的资料
         let char_Miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`character/${MiaoChar.name}/data.json`)))
         //result：Gspanel面板的具体一个角色的数据
@@ -235,14 +238,14 @@ export class MiaoToGspanel extends plugin {
           "icon": "UI_AvatarIcon_PlayerBoy",
           "gachaAvatarImg": "UI_Gacha_AvatarImg_PlayerBoy",
           "baseProp": {
-            "生命值": char_Miao.baseAttr.hp,
-            "攻击力": char_Miao.baseAttr.atk,
-            "防御力": char_Miao.baseAttr.def
+            "生命值": 0,
+            "攻击力": 0,
+            "防御力": 0
           },
           "fightProp": {
-            "生命值": char_Miao.baseAttr.hp,
-            "攻击力": char_Miao.baseAttr.atk,
-            "防御力": char_Miao.baseAttr.def,
+            "生命值": 0,
+            "攻击力": 0,
+            "防御力": 0,
             "暴击率": 5,
             "暴击伤害": 50,
             "治疗加成": 0,
@@ -294,8 +297,10 @@ export class MiaoToGspanel extends plugin {
               ]
             ]
           },
-          "time": MiaoChar._time
+          "time": Math.floor(MiaoChar._time / 1000)
         }
+
+        /**处理技能与命座 */
         if (result.cons >= char_Miao.talentCons.e) {
           result.skills.e.style = "extra"
           result.skills.e.level += 3
@@ -348,11 +353,12 @@ export class MiaoToGspanel extends plugin {
           case 6:
           //六命富哥，命座全亮捏。
         }
-        let weaponType = trans[result.skills.a.icon]
+
+        /**处理武器数据 */
         //weapon_miao：Miao具体一个武器的资料
         let weapon_miao
         try {
-          weapon_miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`weapon/${weaponType}/${result.weapon.name}/data.json`)))
+          weapon_miao = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`weapon/${char_Miao.weapon}/${result.weapon.name}/data.json`)))
         } catch (errorWeaponData) {
           console.log(logger.red(`${pluginINFO}UID${uid}的${result.name}使用了${result.weapon.name}，还请自行判断该角色是否可以使用该武器。如果该角色在原版游戏中可以携带该武器，请更新miao-plugin来尝试修复该问题。以下是命令执行报错：\n`) + errorWeaponData)
           return false
@@ -365,26 +371,101 @@ export class MiaoToGspanel extends plugin {
           return false
         }
         result.weapon.rarity = weapon_miao.star
-        result.weapon.sub.prop = weapon_miao.attr.bonusKey
-        let weaponUP = trans.WeaponPromote[MiaoChar.weapon.promote + 1]
-        let weaponDN = trans.WeaponPromote[MiaoChar.weapon.promote]
+        result.weapon.sub.prop = trans[weapon_miao.attr.bonusKey]
+        let levelUP = trans.Promote[MiaoChar.weapon.promote + 1]
+        let levelDN = trans.Promote[MiaoChar.weapon.promote]
         if (!MiaoChar.weapon.promote) {
           //如果调用1级数据，为简化代码生成1+级数据。
           weapon_miao.attr.atk["1+"] = weapon_miao.attr.atk["1"]
           weapon_miao.attr.bonusData["1+"] = weapon_miao.attr.bonusData["1"]
         }
-        result.weapon.main = await Number((((weapon_miao.attr.atk[`${weaponUP}`] - weapon_miao.attr.atk[`${weaponDN}+`]) * result.weapon.level - weapon_miao.attr.atk[`${weaponUP}`] * weaponDN + weapon_miao.attr.atk[`${weaponDN}+`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2))
-        result.weapon.sub.value = await (((weapon_miao.attr.bonusData[`${weaponUP}`] - weapon_miao.attr.bonusData[`${weaponDN}+`]) * result.weapon.level - weapon_miao.attr.bonusData[`${weaponUP}`] * weaponDN + weapon_miao.attr.bonusData[`${weaponDN}+`] * weaponUP) / (weaponUP - weaponDN)).toFixed(2)
+        //SKIP：中间等级精确化
+        //淦！鬼知道武器角色中间等级该怎么算！我就假设是随等级线性变化了，大概率是错的。
+        result.weapon.main = await Number((((weapon_miao.attr.atk[`${levelUP}`] - weapon_miao.attr.atk[`${levelDN}+`]) * result.weapon.level - weapon_miao.attr.atk[`${levelUP}`] * levelDN + weapon_miao.attr.atk[`${levelDN}+`] * levelUP) / (levelUP - levelDN)).toFixed(2))
+        result.weapon.sub.value = await (((weapon_miao.attr.bonusData[`${levelUP}`] - weapon_miao.attr.bonusData[`${levelDN}+`]) * result.weapon.level - weapon_miao.attr.bonusData[`${levelUP}`] * levelDN + weapon_miao.attr.bonusData[`${levelDN}+`] * levelUP) / (levelUP - levelDN)).toFixed(2)
+
+        /**处理白值 */
+
+        let charPromote
+        if (MiaoChar.id == "10000007" || MiaoChar.id == "10000005") {
+          //如果是主角需要单独处理
+          result.baseProp.生命值 = char_Miao.baseAttr.hp
+          result.baseProp.攻击力 = char_Miao.baseAttr.atk + result.weapon.main
+          result.baseProp.防御力 = char_Miao.baseAttr.def
+          let map = [0, 0, 1, 2, 2, 3, 4]
+          charPromote = { "prop": "攻击力百分比", "value": 6 * map[MiaoChar.promote] }
+        } else {
+          //char_Miao_detail：Miao具体一个角色的资料的生命、攻击、防御、突破属性。请注意，主角没有这类数据！
+          let char_Miao_detail = JSON.parse(fs.readFileSync(MiaoResourecePath.concat(`character/${MiaoChar.name}/detail.json`))).attr
+
+          levelUP = trans.Promote[MiaoChar.promote + 1]
+          levelDN = trans.Promote[MiaoChar.promote]
+          if (!MiaoChar.promote) {
+            //如果调用1级数据，为简化代码生成1+级数据。
+            char_Miao_detail.details["1+"] = char_Miao_detail.details["1"]
+          }
+          result.baseProp.生命值 = await Number((((char_Miao_detail.details[`${levelUP}`][0] - char_Miao_detail.details[`${levelDN}+`][0]) * result.weapon.level - char_Miao_detail.details[`${levelUP}`][0] * levelDN + char_Miao_detail.details[`${levelDN}+`][0] * levelUP) / (levelUP - levelDN)).toFixed(2))
+          result.baseProp.攻击力 = await Number((((char_Miao_detail.details[`${levelUP}`][1] - char_Miao_detail.details[`${levelDN}+`][1]) * result.weapon.level - char_Miao_detail.details[`${levelUP}`][1] * levelDN + char_Miao_detail.details[`${levelDN}+`][1] * levelUP) / (levelUP - levelDN)).toFixed(2)) + result.weapon.main
+          result.baseProp.防御力 = await Number((((char_Miao_detail.details[`${levelUP}`][2] - char_Miao_detail.details[`${levelDN}+`][2]) * result.weapon.level - char_Miao_detail.details[`${levelUP}`][2] * levelDN + char_Miao_detail.details[`${levelDN}+`][2] * levelUP) / (levelUP - levelDN)).toFixed(2))
+          result.fightProp.生命值 = result.baseProp.生命值
+          result.fightProp.攻击力 = result.baseProp.攻击力
+          result.fightProp.防御力 = result.baseProp.防御力
+          /**处理角色突破属性和武器属性 */
+          charPromote = { "prop": trans[char_Miao_detail.keys[3]], "value": char_Miao_detail.details[`${levelDN}+`][3] }
+          if (charPromote.prop == "伤加成") {
+            charPromote.prop = await result.element + charPromote.prop
+          }
+        }
+        let calc = await this.calcAttr(result.baseProp, charPromote)
+        result.fightProp[calc.prop] += calc.value
+        if (result.weapon.rarity > 2) {
+          //仅当稀有度至少三星时，武器才有副属性。
+          calc = await this.calcAttr(result.baseProp, result.weapon.sub)
+          if (calc.change) {
+            result.weapon.sub.prop = result.weapon.sub.prop.replace("百分比", "")
+            result.weapon.sub.value = `${result.weapon.sub.value}%`
+          } else {
+            result.weapon.sub.value = result.weapon.sub.value.toString()
+          }
+          result.fightProp[calc.prop] += calc.value
+        }
+        /**处理圣遗物数据 */
         for (let j in MiaoChar.artis) {
           //MiaoArtis：Miao的具体圣遗物
           let MiaoArtis = MiaoChar.artis[j]
+          if (MiaoArtis.mainId == undefined && MiaoArtis.main == undefined) {
+            //没有圣遗物数据
+            NoData = MiaoChar.artis
+            break
+          }
           if (MiaoArtis.main == undefined) {
-            //TODO：如果没有主词条数据，则表示是新版喵喵数据，采用属性ID。那么预先处理一下属性ID转为旧版喵喵数据的{key,value}的格式
+            //如果没有主词条数据，则表示是新版喵喵数据，采用属性ID。那么预先处理一下属性ID转为旧版喵喵数据的{key,value}的格式，以便后续处理。
             MiaoArtis.main = {
               "key": attr_map[MiaoArtis.mainId],
-              "value": 0
+              //主词条根据星级、等级和key给value
+              "value": dataRelicMain[attr_map[MiaoArtis.mainId]][MiaoArtis.star][MiaoArtis.level]
             }
-            console.log(MiaoArtis)
+            MiaoArtis.attrs = [{}, {}, {}, {}]
+            for (let k in MiaoArtis.attrIds) {
+              let Effect = attr_map[MiaoArtis.attrIds[k]]
+              for (let j in MiaoArtis.attrs) {
+                if (MiaoArtis.attrs[j].key == undefined) {
+                  //如果这个位置还没有属性
+                  MiaoArtis.attrs[j].key = Effect.key
+                  MiaoArtis.attrs[j].value = Effect.value
+                  break
+                }
+                if (MiaoArtis.attrs[j].key == Effect.key) {
+                  //如果这个位置的属性正是Effect对应的
+                  MiaoArtis.attrs[j].value += Effect.value
+                  break
+                }
+              }
+            }
+            for (let k in MiaoArtis.attrs) {
+              if (MiaoArtis.attrs[k].value == undefined) continue
+              MiaoArtis.attrs[k].value = Number(MiaoArtis.attrs[k].value.toFixed(5))
+            }
           }
           //artis：Gspanel的具体圣遗物
           let artis = {
@@ -394,25 +475,25 @@ export class MiaoToGspanel extends plugin {
             "setName": dataRelicSet[MiaoArtis.name],
             "level": MiaoArtis.level,
             "main": {
-              "prop": "生命值",
-              "value": "3571"
+              "prop": trans[MiaoArtis.main.key],
+              "value": MiaoArtis.main.value
             },
             "sub": [
               {
-                "prop": "充能效率",
-                "value": "13%"
+                "prop": trans[MiaoArtis.attrs[0].key],
+                "value": MiaoArtis.attrs[0].value
               },
               {
-                "prop": "攻击力",
-                "value": "3.7%"
+                "prop": trans[MiaoArtis.attrs[1].key],
+                "value": MiaoArtis.attrs[1].value
               },
               {
-                "prop": "生命值",
-                "value": "3.7%"
+                "prop": trans[MiaoArtis.attrs[2].key],
+                "value": MiaoArtis.attrs[2].value
               },
               {
-                "prop": "攻击力",
-                "value": "12"
+                "prop": trans[MiaoArtis.attrs[3].key],
+                "value": MiaoArtis.attrs[3].value
               }
             ],
             "calc": {
@@ -448,11 +529,34 @@ export class MiaoToGspanel extends plugin {
             result.relicSet[artis.setName]++
           else
             result.relicSet[artis.setName] = 1
-          //TODO：接下来处理artis.main、artis.sub、fightProp
-
-
-
+          //处理artis.main→fightProp
+          calc = await this.calcAttr(result.baseProp, artis.main)
+          if (calc.change) {
+            artis.main.prop = artis.main.prop.replace("百分比", "")
+            artis.main.value = `${artis.main.value}%`
+          } else {
+            artis.main.value = artis.main.value.toString()
+          }
+          result.fightProp[calc.prop] += calc.value
+          //artis.sub→fightProp
+          for (let k in artis.sub) {
+            if (artis.sub[k].prop == undefined) continue
+            calc = await this.calcAttr(result.baseProp, artis.sub[k])
+            if (calc.change) {
+              artis.sub[k].prop = artis.sub[k].prop.replace("百分比", "")
+              artis.sub[k].value = `${artis.sub[k].value}%`
+            } else {
+              artis.sub[k].value = artis.sub[k].value.toString()
+            }
+            result.fightProp[calc.prop] += calc.value
+          }
           result.relics[result.relics.length] = artis
+        }
+        if (NoData) {
+          //如果没有圣遗物详细数据，则跳过该面板。
+          console.log(pluginINFO.concat(`UID${uid}${result.name}的圣遗物没有详细数据故跳过，以下是他${result.name}的圣遗物：`))
+          console.log(NoData)
+          continue
         }
         for (let j in result.relicSet) {
           let Effect = dataRelicSet[dataRelicSet[j]]
@@ -465,8 +569,6 @@ export class MiaoToGspanel extends plugin {
             result.fightProp[Effect[0]] += Effect[1]
           }
         }
-        //TODO：fightProp relics
-
         Gspanel.avatars[Gspanel.avatars.length] = result
         //SKIP：relics[i].calc relicCalc damage
       }
@@ -476,6 +578,30 @@ export class MiaoToGspanel extends plugin {
       console.log(logger.red(`${pluginINFO}UID${uid}报错：\n${e}`))
       return false
     }
+  }
+  async calcAttr(baseProp, prop_and_value) {
+    //根据词条和白值返回新的一组{prop,value,change}表示应该在fightProp的哪个prop上增加value，change为true时表示百分数，需要在原属性结尾添加%。
+    let prop = prop_and_value.prop
+    let value = Number(prop_and_value.value)
+    let change = (prop.search(/加成|百分比|充能效率|暴击/g) != -1)
+
+    if (prop.includes("百分比")) {
+      prop = prop.replace("百分比", "")
+      value = baseProp[prop] * value / 100
+    } else {
+      if (prop == "物伤加成") {
+        prop = "物理伤害加成"
+      } else {
+        if (prop.includes("伤加成")) {
+          prop = prop.replace("伤加成", "元素伤害加成")
+        } else {
+          if (prop.includes("充能效率"))
+            prop = "元素充能效率"
+        }
+      }
+    }
+
+    return { prop, value, change }
   }
   async findUID(QQ) {
     //根据QQ号判断对应uid，返回null表示没有对应uid。
@@ -487,8 +613,9 @@ export class MiaoToGspanel extends plugin {
     //数据来源：https://gitlab.com/Dimbreath/AnimeGameData/-/blob/master/ExcelBinOutput/WeaponExcelConfigData.json
     let TimeStart = await new Date().getTime()
     try {
-      await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitlab.com/Dimbreath/AnimeGameData/-/raw/master/ExcelBinOutput/WeaponExcelConfigData.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
+      await download(GenshinDataRepoDownload, "WeaponExcelConfigData.json")
       let TimeDownload = await new Date().getTime()
+      console.log(pluginINFO.concat(`下载完成！用时${TimeDownload - TimeStart}ms`))
       let ori = JSON.parse(fs.readFileSync(resource.concat("WeaponExcelConfigData.json")))
       let Teamp_WeaponID_To_IconName = await {}
       for (let i in ori) {
@@ -511,10 +638,12 @@ export class MiaoToGspanel extends plugin {
     //数据来源：https://gitlab.com/Dimbreath/AnimeGameData/-/blob/master/ExcelBinOutput/AvatarTalentExcelConfigData.json
     let TimeStart = await new Date().getTime()
     try {
-      await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitlab.com/Dimbreath/AnimeGameData/-/raw/master/ExcelBinOutput/AvatarTalentExcelConfigData.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
+      await download(GenshinDataRepoDownload, "AvatarTalentExcelConfigData.json")
       let TimeDownload = await new Date().getTime()
+      console.log(pluginINFO.concat(`下载完成！用时${TimeDownload - TimeStart}ms`))
       let ori = JSON.parse(fs.readFileSync(resource.concat("AvatarTalentExcelConfigData.json")))
-      let Temp_PlayerElem_To_ConsIconName = { "风": [], "岩": [], "雷": [], "草": [] }
+      //如果版本有更新，需要手动维护后续元素映射transElem。
+      let Temp_PlayerElem_To_ConsIconName = { "风": [], "岩": [], "雷": [], "草": [], "水": [], "火": [], "冰": [] }
       let transElem = { "915": "风", "917": "岩", "914": "雷", "913": "草" }
       for (let i in ori) {
         if (ori[i].mainCostItemId > 1000) continue
@@ -554,7 +683,14 @@ export class MiaoToGspanel extends plugin {
       ori = ori.replaceAll("'", "")
       ori = ori.replaceAll(/(\w|\.)+/g, `"$&"`)
       ori = JSON.parse(ori.concat("}"))
-      for (let i in ori) try { ori[i].value = Number((Number(ori[i].value)).toFixed(5)) } catch (e) { }
+      for (let i in ori) try {
+        if (ori[i].key.search(/Plus|mastery/g) == -1) {
+          //如果value是百分数，为了格式统一将其扩大为100倍
+          ori[i].value = Number((Number(ori[i].value) * 100).toFixed(5))
+        } else {
+          ori[i].value = Number((Number(ori[i].value)).toFixed(5))
+        }
+      } catch (e) { }
       fs.writeFileSync(resource.concat("attr_map.json"), JSON.stringify(ori))
       attr_map = ori
       let TimeEnd = await new Date().getTime()
@@ -581,10 +717,8 @@ export class MiaoToGspanel extends plugin {
         this.reply(`更新失败，推测原因为未正确安装喵喵插件或未正确配置本js插件。请检查后台日志确认详细原因。\n用时${TimeEnd - TimeStart}ms`)
         return false
       }
-      this.reply(`该文件较大，可能需要下载一段时间。。。`)
-      console.log(pluginINFO.concat(`该文件较大，可能需要下载一段时间。。。`))
       let TimeStartDownload = await new Date().getTime()
-      await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O https://gitlab.com/Dimbreath/AnimeGameData/-/raw/master/ExcelBinOutput/ReliquaryCodexExcelConfigData.json`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
+      await download(GenshinDataRepoDownload, "ReliquaryCodexExcelConfigData.json")
       let TimeDownload = await new Date().getTime()
       console.log(pluginINFO.concat(`下载完成！用时${TimeDownload - TimeStartDownload}ms`))
       let ori = JSON.parse(fs.readFileSync(resource.concat("ReliquaryCodexExcelConfigData.json")))
@@ -646,13 +780,86 @@ export class MiaoToGspanel extends plugin {
       this.reply(`更新失败了呜呜呜，请检查后台日志确认原因。用时${TimeEnd - TimeStart}ms`)
     }
   }
+  async relicMainUpdate() {
+    //#圣遗物主词条更新
+    //数据来源：https://gitlab.com/Dimbreath/AnimeGameData/-/blob/master/ExcelBinOutput/ReliquaryLevelExcelConfigData.json
+    let TimeStart = await new Date().getTime()
+    try {
+      await download(GenshinDataRepoDownload, "ReliquaryLevelExcelConfigData.json")
+      let TimeDownload = await new Date().getTime()
+      console.log(pluginINFO.concat(`下载完成！用时${TimeDownload - TimeStart}ms`))
+      let ori = JSON.parse(fs.readFileSync(resource.concat("ReliquaryLevelExcelConfigData.json")))
+      let translate = {
+        //如有新增主属性请手动添加
+        "FIGHT_PROP_HP": "hpPlus",
+        "FIGHT_PROP_HP_PERCENT": "hp",
+        "FIGHT_PROP_ATTACK": "atkPlus",
+        "FIGHT_PROP_ATTACK_PERCENT": "atk",
+        "FIGHT_PROP_DEFENSE": "defPlus",
+        "FIGHT_PROP_DEFENSE_PERCENT": "def",
+        "FIGHT_PROP_CRITICAL": "cpct",
+        "FIGHT_PROP_CRITICAL_HURT": "cdmg",
+        "FIGHT_PROP_CHARGE_EFFICIENCY": "recharge",
+        "FIGHT_PROP_HEAL_ADD": "heal",
+        "FIGHT_PROP_ELEMENT_MASTERY": "mastery",
+        "FIGHT_PROP_FIRE_ADD_HURT": "pyro",
+        "FIGHT_PROP_ELEC_ADD_HURT": "electro",
+        "FIGHT_PROP_WATER_ADD_HURT": "hydro",
+        "FIGHT_PROP_WIND_ADD_HURT": "anemo",
+        "FIGHT_PROP_ROCK_ADD_HURT": "geo",
+        "FIGHT_PROP_GRASS_ADD_HURT": "dendro",
+        "FIGHT_PROP_ICE_ADD_HURT": "cryo",
+        "FIGHT_PROP_PHYSICAL_ADD_HURT": "phy",
+        "FIGHT_PROP_FIRE_SUB_HURT": "SKIP"
+      }
+      let result = {
+        //如有新增主属性请手动添加
+        "hpPlus": [[], [], [], [], [], []], "hp": [[], [], [], [], [], []], "atkPlus": [[], [], [], [], [], []], "atk": [[], [], [], [], [], []], "defPlus": [[], [], [], [], [], []], "def": [[], [], [], [], [], []], "recharge": [[], [], [], [], [], []], "mastery": [[], [], [], [], [], []], "cpct": [[], [], [], [], [], []], "cdmg": [[], [], [], [], [], []], "heal": [[], [], [], [], [], []], "pyro": [[], [], [], [], [], []], "electro": [[], [], [], [], [], []], "cryo": [[], [], [], [], [], []], "hydro": [[], [], [], [], [], []], "anemo": [[], [], [], [], [], []], "geo": [[], [], [], [], [], []], "dendro": [[], [], [], [], [], []], "phy": [[], [], [], [], [], []],
+      }
+      for (let i = 1; i < ori.length; i++) {
+        for (let j in ori[i].addProps) {
+          let Effect = ori[i].addProps[j]
+          Effect.propType = translate[Effect.propType]
+          if (Effect.propType == "SKIP") continue
+          if (Effect.value < 1) {
+            //如果value是百分数，为了格式统一将其扩大为100倍
+            Effect.value = Number((Effect.value * 100).toFixed(3))
+          } else {
+            Effect.value = Number(Effect.value.toFixed(3))
+          }
+          result[Effect.propType][ori[i].rank][ori[i].level - 1] = Effect.value
+        }
+      }
+      let FileSize = fs.statSync(resource.concat("ReliquaryLevelExcelConfigData.json")).size
+      fs.rmSync(resource.concat("ReliquaryLevelExcelConfigData.json"))
+      fs.writeFileSync(resource.concat("dataRelicMain.json"), JSON.stringify(result))
+      dataRelicMain = result
+      let TimeEnd = await new Date().getTime()
+      this.reply(`成功更新圣遗物套装数据~\n本次更新总计用时${TimeEnd - TimeStart}ms~\n其中下载资源花费${TimeDownload - TimeStart}ms~\n为避免空间浪费删除了非必要文件：\ReliquaryLevelExcelConfigData.json\n文件大小${(FileSize / 1024).toFixed(2)}KB`)
+    } catch (e) {
+      console.log(pluginINFO.concat(e))
+      let TimeEnd = await new Date().getTime()
+      this.reply(`更新失败了呜呜呜，请检查后台日志确认原因。用时${TimeEnd - TimeStart}ms`)
+    }
+  }
   async test() {
     //测试函数
-    let test = { a: 0 }
-    test.a += 1
-    let t = 5
-    //test.b ? test.b += t : test.b = t
-    test.b = t + test.b ? test.b : 0
-    fs.writeFileSync(resource.concat("test.json"), JSON.stringify(test))
+    await download(GenshinDataRepoDownload, "ReliquaryLevelExcelConfigData.json")
+    let ori = JSON.parse(fs.readFileSync(resource.concat("ReliquaryLevelExcelConfigData.json")))
+    let temp = {}
+    for (let i in ori) {
+      for (let j in ori[i].addProps) {
+        let x = ori[i].addProps[j].propType
+        let y = ori[i].addProps[j].value
+        temp[x] = y
+      }
+    }
+    fs.writeFileSync(resource.concat("test.json"), JSON.stringify(temp))
   }
+}
+async function download(url, filename) {
+  //下载必要资源到resource文件夹
+  filename = filename ? filename : ""
+  let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O ${url}${filename}`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
+  logger.mark(`${pluginINFO}\n正在下载${filename}：\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
 }
