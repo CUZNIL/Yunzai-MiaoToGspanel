@@ -1,14 +1,16 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月20日00:04:45
+2023年4月22日13:42:46
 //*/
 
+let resource = "resources/MiaoToGspanel/"
 let MiaoPath = "data/UserData/"
 let GspanelPath = "plugins/py-plugin/data/gspanel/cache/"
 let MiaoResourecePath = "plugins/miao-plugin/resources/meta/"
 
 /*
+resource:该插件产生的中间文件存放的文件夹位置。download函数会默认下载文件到该位置。
 MiaoPath：miao-plugin产生的面板数据路径，一般不用手动修改。
 GspanelPath：nonebot-plugin-gspanel产生的面板数据路径，需要手动配置到自己安装的路径。
 MiaoResourecePath：miao-plugin安装位置下对应的资料数据存放路径，一般不用修改。
@@ -18,22 +20,23 @@ MiaoResourecePath：miao-plugin安装位置下对应的资料数据存放路径�
 以下内容一般不需要你手动修改，除非你需要高度个性化。需要请自行操刀。
 //*/
 import fs from 'node:fs'
+import fetch from "node-fetch";
 
 let redisStart = "Yz:genshin:mys:qq-uid:"
 let errorTIP = "请仔细阅读README，你没有正确配置！可能是以下原因：\n1.你不是通过py-plugin安装的nonebot-plugin-gspanel\n2.你没有正确配置nonebot-plugin-gspanel\n3.你没有正确配置本js插件\n。。。\n为解决本问题请自行阅读https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel"
 let pluginINFO = "【MiaoToGspanel插件】"
 let thisRepoDownload = "https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/"
 let GenshinDataRepoDownload = "https://gitlab.com/Dimbreath/AnimeGameData/-/raw/master/ExcelBinOutput/"
-//resource:该插件产生的中间文件存放的文件夹位置，如需修改请自行创建对应文件夹。download函数会默认下载文件到该位置。
-let resource = "resources/MiaoToGspanel/"
-if (!fs.existsSync(`${resource}`)) {
+if (!fs.existsSync(resource)) {
   console.log(`${pluginINFO}检测到没有文件夹${resource}！即将创建该文件夹用于存放插件运行必要的数据！`)
-  fs.mkdirSync(`${resource}`)
+  await mkdir(resource)
+  console.log(`${pluginINFO}新建文件夹成功，接下来会在该文件夹下载必要文件！`)
   await download(thisRepoDownload, "WeaponID_To_IconName.json")
   await download(thisRepoDownload, "PlayerElem_To_ConsIconName.json")
   await download(thisRepoDownload, "attr_map.json")
   await download(thisRepoDownload, "dataRelicSet.json")
   await download(thisRepoDownload, "dataRelicMain.json")
+  console.log(`${pluginINFO}下载成功！如有疑问请发送#面板适配帮助！`)
 }
 //char_data_Gspanel:Gspanel面板的所有角色的资料
 let char_data_Gspanel = JSON.parse(fs.readFileSync(GspanelPath + "../char-data.json"))
@@ -138,7 +141,11 @@ export class MiaoToGspanel extends plugin {
           permission: 'master'
         },
         {
-          reg: '^#?测试$',
+          reg: '^#?(面板)?(转换|适配|(通用化?))帮助$',
+          fnc: 'help'
+        },
+        {
+          reg: '^#?测试',
           fnc: 'test',
           permission: 'master'
         }
@@ -835,14 +842,14 @@ export class MiaoToGspanel extends plugin {
       fs.writeFileSync(resource.concat("dataRelicMain.json"), JSON.stringify(result))
       dataRelicMain = result
       let TimeEnd = await new Date().getTime()
-      this.reply(`成功更新圣遗物套装数据~\n本次更新总计用时${TimeEnd - TimeStart}ms~\n其中下载资源花费${TimeDownload - TimeStart}ms~\n为避免空间浪费删除了非必要文件：\ReliquaryLevelExcelConfigData.json\n文件大小${(FileSize / 1024).toFixed(2)}KB`)
+      this.reply(`成功更新圣遗物主词条数据~\n本次更新总计用时${TimeEnd - TimeStart}ms~\n其中下载资源花费${TimeDownload - TimeStart}ms~\n为避免空间浪费删除了非必要文件：\ReliquaryLevelExcelConfigData.json\n文件大小${(FileSize / 1024).toFixed(2)}KB`)
     } catch (e) {
       console.log(pluginINFO.concat(e))
       let TimeEnd = await new Date().getTime()
       this.reply(`更新失败了呜呜呜，请检查后台日志确认原因。用时${TimeEnd - TimeStart}ms`)
     }
   }
-  async test() {
+  async help() {
     //测试函数
     await download(GenshinDataRepoDownload, "ReliquaryLevelExcelConfigData.json")
     let ori = JSON.parse(fs.readFileSync(resource.concat("ReliquaryLevelExcelConfigData.json")))
@@ -856,10 +863,31 @@ export class MiaoToGspanel extends plugin {
     }
     fs.writeFileSync(resource.concat("test.json"), JSON.stringify(temp))
   }
+  async test() {
+    //测试函数
+  }
 }
 async function download(url, filename) {
   //下载必要资源到resource文件夹
-  filename = filename ? filename : ""
+
+  let response = `${url}${filename}`
+  response = await fetch(response)
+  response = await response.text()
+  fs.writeFileSync(resource + filename, response)
+
+  /*如果使用电脑直接搭建云崽可能会报错，尝试用fetch改进。
   let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O ${url}${filename}`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
   logger.mark(`${pluginINFO}\n正在下载${filename}：\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
+  */
+}
+async function mkdir(path) {
+  //尝试新建文件夹path，如果没有path的上一个文件夹则尝试循环创建直到有。
+  try {
+    fs.mkdirSync(path)
+  } catch (e) {
+    //如果没有path，尝试新建path，再去新建folder_name。
+    let next_path = path.substring(0, path.lastIndexOf("/"))
+    await mkdir(next_path)
+    fs.mkdirSync(path)
+  }
 }
