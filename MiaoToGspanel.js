@@ -1,7 +1,8 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月22日13:42:46
+2023年4月26日16:12:06
+发送#面板通用化帮助 来获取详细帮助~
 //*/
 
 let resource = "resources/MiaoToGspanel/"
@@ -106,13 +107,17 @@ export class MiaoToGspanel extends plugin {
       priority: -233,
       rule: [
         {
-          reg: '^#?转换(全部|所有)(喵喵|PY)?面板$',
+          reg: '^#?转换(全部|所有)(喵喵|PY)?面(板|包)$',
           fnc: 'M2G_all',
           permission: 'master'
         },
         {
-          reg: '^#?转换(喵喵|PY)?面板(\\d{9})?$',
+          reg: '^#?转换(喵喵|PY)?面(板|包)(\\d{9})?$',
           fnc: 'M2G_query'
+        },
+        {
+          reg: '^#?(面(板|包))?(转换|适配|(通用化?))(面(板|包))?(帮助|菜单|help)$',
+          fnc: 'help'
         },
         //以下命令都是尝试主动更新数据，如果你没有遇到BUG请不要尝试发送以下命令(以免bug)
         {
@@ -138,15 +143,6 @@ export class MiaoToGspanel extends plugin {
         {
           reg: '^#?圣遗物主词条更新$',
           fnc: 'relicMainUpdate',
-          permission: 'master'
-        },
-        {
-          reg: '^#?(面板)?(转换|适配|(通用化?))帮助$',
-          fnc: 'help'
-        },
-        {
-          reg: '^#?测试',
-          fnc: 'test',
           permission: 'master'
         }
       ]
@@ -386,16 +382,17 @@ export class MiaoToGspanel extends plugin {
           weapon_miao.attr.atk["1+"] = weapon_miao.attr.atk["1"]
           weapon_miao.attr.bonusData["1+"] = weapon_miao.attr.bonusData["1"]
         }
-        //SKIP：中间等级精确化
-        //淦！鬼知道武器角色中间等级该怎么算！我就假设是随等级线性变化了，大概率是错的。
-        result.weapon.main = await Number((((weapon_miao.attr.atk[`${levelUP}`] - weapon_miao.attr.atk[`${levelDN}+`]) * result.weapon.level - weapon_miao.attr.atk[`${levelUP}`] * levelDN + weapon_miao.attr.atk[`${levelDN}+`] * levelUP) / (levelUP - levelDN)).toFixed(2))
-        result.weapon.sub.value = await (((weapon_miao.attr.bonusData[`${levelUP}`] - weapon_miao.attr.bonusData[`${levelDN}+`]) * result.weapon.level - weapon_miao.attr.bonusData[`${levelUP}`] * levelDN + weapon_miao.attr.bonusData[`${levelDN}+`] * levelUP) / (levelUP - levelDN)).toFixed(2)
+        //根据我的测试结果和enka的数据，中间等级都是线性关系，如果出现错误请反馈。
+
+        result.weapon.main = await this.calcBetween(weapon_miao.attr.atk, result.weapon.level, levelUP, levelDN)
+
+        result.weapon.sub.value = String(await this.calcBetween(weapon_miao.attr.bonusData, result.weapon.level, levelUP, levelDN))
 
         /**处理白值 */
 
         let charPromote
         if (MiaoChar.id == "10000007" || MiaoChar.id == "10000005") {
-          //如果是主角需要单独处理
+          //如果是主角需要单独处理，直接假设是满级。
           result.baseProp.生命值 = char_Miao.baseAttr.hp
           result.baseProp.攻击力 = char_Miao.baseAttr.atk + result.weapon.main
           result.baseProp.防御力 = char_Miao.baseAttr.def
@@ -411,9 +408,10 @@ export class MiaoToGspanel extends plugin {
             //如果调用1级数据，为简化代码生成1+级数据。
             char_Miao_detail.details["1+"] = char_Miao_detail.details["1"]
           }
-          result.baseProp.生命值 = await Number((((char_Miao_detail.details[`${levelUP}`][0] - char_Miao_detail.details[`${levelDN}+`][0]) * result.weapon.level - char_Miao_detail.details[`${levelUP}`][0] * levelDN + char_Miao_detail.details[`${levelDN}+`][0] * levelUP) / (levelUP - levelDN)).toFixed(2))
-          result.baseProp.攻击力 = await Number((((char_Miao_detail.details[`${levelUP}`][1] - char_Miao_detail.details[`${levelDN}+`][1]) * result.weapon.level - char_Miao_detail.details[`${levelUP}`][1] * levelDN + char_Miao_detail.details[`${levelDN}+`][1] * levelUP) / (levelUP - levelDN)).toFixed(2)) + result.weapon.main
-          result.baseProp.防御力 = await Number((((char_Miao_detail.details[`${levelUP}`][2] - char_Miao_detail.details[`${levelDN}+`][2]) * result.weapon.level - char_Miao_detail.details[`${levelUP}`][2] * levelDN + char_Miao_detail.details[`${levelDN}+`][2] * levelUP) / (levelUP - levelDN)).toFixed(2))
+          //根据我的测试结果和enka的数据，中间等级都是线性关系，如果出现错误请反馈。
+          result.baseProp.生命值 = await this.calcBetween2(char_Miao_detail.details, result.level, 0, levelUP, levelDN)
+          result.baseProp.攻击力 = await this.calcBetween2(char_Miao_detail.details, result.level, 1, levelUP, levelDN) + result.weapon.main
+          result.baseProp.防御力 = await this.calcBetween2(char_Miao_detail.details, result.level, 2, levelUP, levelDN)
           result.fightProp.生命值 = result.baseProp.生命值
           result.fightProp.攻击力 = result.baseProp.攻击力
           result.fightProp.防御力 = result.baseProp.防御力
@@ -576,9 +574,20 @@ export class MiaoToGspanel extends plugin {
             result.fightProp[Effect[0]] += Effect[1]
           }
         }
-        Gspanel.avatars[Gspanel.avatars.length] = result
+        /**将baseProph和fightProp约分到合适位数 */
+        for (let j in result.baseProp)
+          result.baseProp[j] = Number(result.baseProp[j].toFixed(2))
+        for (let j in result.fightProp)
+          result.fightProp[j] = Number(result.fightProp[j].toFixed(2))
+
+
         //SKIP：relics[i].calc relicCalc damage
+
+        Gspanel.avatars[Gspanel.avatars.length] = result
       }
+
+
+      /**写入数据 */
       fs.writeFileSync(await GspanelPath.concat(`${uid}.json`), JSON.stringify(Gspanel))
       return true
     } catch (e) {
@@ -586,12 +595,74 @@ export class MiaoToGspanel extends plugin {
       return false
     }
   }
+
+  async help(e) {
+    let forwardMsg = [
+      {
+        message: `#转换面板 #转换面板123456789\n将指定的喵喵面板转换为Gspanel面板。`,
+        user_id: Bot.uin,
+        nickname: "转换单个面板"
+      },
+      {
+        message: `#转换全部面板\n将所有喵喵面板转换为Gspanel面板。`,
+        user_id: Bot.uin,
+        nickname: "转换全部面板"
+      },
+      {
+        message: `#武器数据更新`,
+        user_id: Bot.uin,
+        nickname: "如出现武器图标错误"
+      },
+      {
+        message: `#主角命座更新`,
+        user_id: Bot.uin,
+        nickname: "如出现旅行者命座图标错误"
+      },
+      {
+        message: `#属性映射更新`,
+        user_id: Bot.uin,
+        nickname: "如出现属性昵称错误"
+      },
+      {
+        message: `#圣遗物套装更新`,
+        user_id: Bot.uin,
+        nickname: "如出现圣遗物套装错误"
+      },
+      {
+        message: `#圣遗物主词条更新`,
+        user_id: Bot.uin,
+        nickname: "如出现圣遗物主词条大小错误"
+      },
+      {
+        message: `本插件地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/，github同用户名项目名，可能会保持更新。如遇bug请先检查是否有更新，没有解决请反馈到issue。`,
+        user_id: Bot.uin,
+        nickname: "插件地址"
+      },
+      {
+        message: `如需更改配置，请手动更改插件本体。当前配置：\n插件数据：${resource}\n\n喵喵面板位置：${MiaoPath}\n\nGspanel面板位置：${GspanelPath}\n\n喵喵资料位置：${MiaoResourecePath}\n\n一般需要手动配置Gspanel面板位置，具体位置请参考自己的py插件的配置。具体来讲，使用自己的Yunzai/plugins/py-plugin/config.yaml里的resources_dir的路径，加上cache即可。`,
+        user_id: Bot.uin,
+        nickname: "如需更改请手动更改"
+      }
+    ]
+    if (!this.e.isMaster) {
+      forwardMsg.push({ message: `温馨提示：你不是主人，你只能使用 #转换面板`, user_id: Bot.uin, nickname: "主人判定" })
+    }
+    if (e.isGroup) {
+      forwardMsg = await e.group.makeForwardMsg(forwardMsg)
+    } else {
+      forwardMsg = await e.friend.makeForwardMsg(forwardMsg)
+    }
+    forwardMsg.data = forwardMsg.data
+      .replace(/\n/g, '')
+      .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
+      .replace(/___+/, `<title size=\"34\" maxLines=\"2\" lineSpace=\"12\">#面板通用化帮助</title><title color="#777777" size="26">原神面板转换帮助</title>`)
+    await e.reply(forwardMsg)
+  }
   async calcAttr(baseProp, prop_and_value) {
     //根据词条和白值返回新的一组{prop,value,change}表示应该在fightProp的哪个prop上增加value，change为true时表示百分数，需要在原属性结尾添加%。
     let prop = prop_and_value.prop
     let value = Number(prop_and_value.value)
     let change = (prop.search(/加成|百分比|充能效率|暴击/g) != -1)
-
     if (prop.includes("百分比")) {
       prop = prop.replace("百分比", "")
       value = baseProp[prop] * value / 100
@@ -607,8 +678,15 @@ export class MiaoToGspanel extends plugin {
         }
       }
     }
-
     return { prop, value, change }
+  }
+  async calcBetween(f, x, x_up, x_dn) {
+    //根据对应关系f[x]和自变量x1、x2，线性计算f在二者之间的x对应的值，并返回二位小数。如果有index则f需要加上。
+    return Number((((f[x_up] - f[x_dn + "+"]) * x - f[x_up] * x_dn + f[x_dn + "+"] * x_up) / (x_up - x_dn)).toFixed(2))
+  }
+  async calcBetween2(f, x, index, x_up, x_dn) {
+    //根据对应关系f[x][index]和自变量x1、x2，线性计算f在二者之间的x对应的值，并返回二位小数。如果有index则f需要加上。
+    return Number((((f[x_up][index] - f[x_dn + "+"][index]) * x - f[x_up][index] * x_dn + f[x_dn + "+"][index] * x_up) / (x_up - x_dn)).toFixed(2))
   }
   async findUID(QQ) {
     //根据QQ号判断对应uid，返回null表示没有对应uid。
@@ -842,43 +920,20 @@ export class MiaoToGspanel extends plugin {
       fs.writeFileSync(resource.concat("dataRelicMain.json"), JSON.stringify(result))
       dataRelicMain = result
       let TimeEnd = await new Date().getTime()
-      this.reply(`成功更新圣遗物主词条数据~\n本次更新总计用时${TimeEnd - TimeStart}ms~\n其中下载资源花费${TimeDownload - TimeStart}ms~\n为避免空间浪费删除了非必要文件：\ReliquaryLevelExcelConfigData.json\n文件大小${(FileSize / 1024).toFixed(2)}KB`)
+      this.reply(`成功更新圣遗物主词条数据~\n本次更新总计用时${TimeEnd - TimeStart}ms~\n其中下载资源花费${TimeDownload - TimeStart}ms~\n为避免空间浪费删除了非必要文件：\nReliquaryLevelExcelConfigData.json\n文件大小${(FileSize / 1024).toFixed(2)}KB`)
     } catch (e) {
       console.log(pluginINFO.concat(e))
       let TimeEnd = await new Date().getTime()
       this.reply(`更新失败了呜呜呜，请检查后台日志确认原因。用时${TimeEnd - TimeStart}ms`)
     }
   }
-  async help() {
-    //测试函数
-    await download(GenshinDataRepoDownload, "ReliquaryLevelExcelConfigData.json")
-    let ori = JSON.parse(fs.readFileSync(resource.concat("ReliquaryLevelExcelConfigData.json")))
-    let temp = {}
-    for (let i in ori) {
-      for (let j in ori[i].addProps) {
-        let x = ori[i].addProps[j].propType
-        let y = ori[i].addProps[j].value
-        temp[x] = y
-      }
-    }
-    fs.writeFileSync(resource.concat("test.json"), JSON.stringify(temp))
-  }
-  async test() {
-    //测试函数
-  }
 }
 async function download(url, filename) {
   //下载必要资源到resource文件夹
-
   let response = `${url}${filename}`
   response = await fetch(response)
   response = await response.text()
   fs.writeFileSync(resource + filename, response)
-
-  /*如果使用电脑直接搭建云崽可能会报错，尝试用fetch改进。
-  let ret = await new Promise((resolve, reject) => { exec(`cd ${resource} && curl -O ${url}${filename}`, (error, stdout, stderr) => { resolve({ error, stdout, stderr }) }) })
-  logger.mark(`${pluginINFO}\n正在下载${filename}：\n${ret.stdout.trim()}\n${ret.stderr.trim()}`)
-  */
 }
 async function mkdir(path) {
   //尝试新建文件夹path，如果没有path的上一个文件夹则尝试循环创建直到有。
