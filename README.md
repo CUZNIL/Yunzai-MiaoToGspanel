@@ -7,9 +7,9 @@
 
 请确保你已经正确搭载了[云崽Bot v3](https://gitee.com/yoimiya-kokomi/Yunzai-Bot)、[miao-plugin](../../../../yoimiya-kokomi/miao-plugin)和[nonebot-plugin-gspanel](https://github.com/monsterxcn/nonebot-plugin-gspanel)，尚不清楚其他版本的云崽使用本插件是否会报错。
 
-将[`MiaoToGspanel.js`](MiaoToGspanel.js)文件放入`Yunzai-Bot/plugins/example/`文件夹下。
+ **1. 将[`MiaoToGspanel.js`](MiaoToGspanel.js)文件放入`Yunzai-Bot/plugins/example/`文件夹下即可。** 
 
-<details><summary>不知道怎么放？</summary>
+<details><summary>不知道怎么放？展开看看</summary>
 
 首先进入云崽根目录。
 
@@ -31,54 +31,20 @@ curl -O https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/MiaoToGspanel.j
 
 </details>
 
+ **2. 手动配置修改js插件内8-11行的内容** 
+
+具体修改逻辑见13-19行的注释，日后会考虑将这一过程整合到插件内。如果你搭配我的[云崽安装教程](../../../Yunzai-install/)来安装gspanel和miao，则不需要更改任何内容。
+
 ### 功能
 
-啊 困了 先睡觉。
+发送`#面板通用化帮助`即可获取帮助信息，如下图所示。
 
-先放一下正则匹配：（基本只用得上前俩个命令）
+![输入图片说明](download/pic/wqdqfe.png)
 
+### 功能演示
 
-        {
-          reg: '^#?转换(全部|所有)(喵喵|PY)?面板$',
-          fnc: 'M2G_all',
-          permission: 'master'
-        },
-        {
-          reg: '^#?转换(喵喵|PY)?面板(\\d{9})?$',
-          fnc: 'M2G_query'
-        },
-        //以下命令都是尝试主动更新数据，如果你没有遇到BUG请不要尝试发送以下命令(以免bug)
-        {
-          reg: '^#?武器数据更新$',
-          fnc: 'weaponUpdate',
-          permission: 'master'
-        },
-        {
-          reg: '^#?主角命座更新$',
-          fnc: 'playerUpdate',
-          permission: 'master'
-        },
-        {
-          reg: '^#?属性映射更新$',
-          fnc: 'attrUpdate',
-          permission: 'master'
-        },
-        {
-          reg: '^#?圣遗物套装更新$',
-          fnc: 'relicUpdate',
-          permission: 'master'
-        },
-        {
-          reg: '^#?圣遗物主词条更新$',
-          fnc: 'relicMainUpdate',
-          permission: 'master'
-        },
-        {
-          reg: '^#?(面板)?(转换|适配|(通用化?))帮助$',
-          fnc: 'help'
-        },
-        {
-          reg: '^#?测试',
-          fnc: 'test',
-          permission: 'master'
-        }
+![输入图片说明](download/pic/qwdqwf.png)
+
+我想通过[gspanel](https://github.com/monsterxcn/nonebot-plugin-gspanel)计算UID187463676的可莉三火队伍伤害，但是班尼特香菱都没有放在角色展柜，[gspanel](https://github.com/monsterxcn/nonebot-plugin-gspanel)缓存也没有班香的数据。
+
+这时候如果喵喵插件曾经更新过班香的数据，即可如图所示发送`#转换面板187463676`
