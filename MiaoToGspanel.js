@@ -1,20 +1,23 @@
 /*
 功能：将miao-plugin产生的面板数据适配到gspanel，以便数据更新。推荐搭配https://gitee.com/CUZNIL/Yunzai-install。
 项目地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel
-2023年4月26日16:12:06
 发送#面板通用化帮助 来获取详细帮助~
 //*/
+
+let 最近一次编辑时间 = "2023年5月12日16:58:48"
 
 let resource = "resources/MiaoToGspanel/"
 let MiaoPath = "data/UserData/"
 let GspanelPath = "plugins/py-plugin/data/gspanel/cache/"
 let MiaoResourecePath = "plugins/miao-plugin/resources/meta/"
+let ThisFilePath = "plugins/example/MiaoToGspanel.js"
 
 /*
 resource:该插件产生的中间文件存放的文件夹位置。download函数会默认下载文件到该位置。
 MiaoPath：miao-plugin产生的面板数据路径，一般不用手动修改。
 GspanelPath：nonebot-plugin-gspanel产生的面板数据路径，需要手动配置到自己安装的路径。
 MiaoResourecePath：miao-plugin安装位置下对应的资料数据存放路径，一般不用修改。
+ThisFilePath：你安装该js插件的位置，一般不用修改。
 如果你搭配我的云崽安装教程来安装gspanel，则不需要更改任何内容。云崽安装教程：https://gitee.com/CUZNIL/Yunzai-install
 修改请注意保留结尾的“/”
 
@@ -144,6 +147,16 @@ export class MiaoToGspanel extends plugin {
           reg: '^#?圣遗物主词条更新$',
           fnc: 'relicMainUpdate',
           permission: 'master'
+        },
+        {
+          reg: '^#转换面板插件更新$',
+          fnc: 'selfUpdate',
+          permission: 'master'
+        },
+        {
+          reg: '^#转换面板插件强制更新$',
+          fnc: 'forceSelfUpdate',
+          permission: 'master'
         }
       ]
     })
@@ -156,6 +169,7 @@ export class MiaoToGspanel extends plugin {
     let TimeStart = new Date().getTime()
     let KEYtoUID = await redis.keys(redisStart + "*")
     let qq2uid = JSON.parse(fs.readFileSync(GspanelPath + "../qq-uid.json"))
+    let ErrorList = []
     let succeed = 0
     let fail = 0
     let empty = 0
@@ -171,18 +185,22 @@ export class MiaoToGspanel extends plugin {
         let result = await this.M2G(uid)
         let TimeNow = await new Date().getTime()
         if (TimeNow - TimeLastLog > 300) {
-          console.log(pluginINFO + `当前转换进度：${succeed + fail + empty}/${KEYtoUID.length}`)
+          //想自己调整日志输出间隔就改上面的if里面的数字，单位ms。
+          console.log(pluginINFO + "成功" + succeed + `${fail ? `个,失败${fail}` : ""}个,进度${succeed + fail + empty}/` + KEYtoUID.length)
           TimeLastLog = TimeNow
         }
         qq2uid[qq] = uid
-        if (result) succeed++
-        else
+        if (result == true) succeed++
+        else {
           fail++
+          ErrorList.push(result)
+        }
       }
     }
     await fs.writeFileSync(await GspanelPath.concat("../qq-uid.json"), JSON.stringify(qq2uid))
     let TimeEnd = await new Date().getTime()
-    this.reply(`报告主人！本次转换总计统计到${succeed + fail + empty}个uid，其中：\n${succeed ? `成功转换${succeed}个面板数据！` : "我超，所有转换都失败了，牛逼！"}\n${empty ? `没有面板数据的有${empty}个` : "没发现没有面板数据的用户"}！\n${fail ? `转换失败的有${fail}个(请检查日志输出)` : "没有出现转换失败(好耶)"}！\n本次转换总计用时${((TimeEnd - TimeStart) / 1000).toFixed(1)}s~`)
+    this.reply(`报告主人！本次转换总计统计到${KEYtoUID.length}个uid，其中：\n${succeed ? `成功转换${succeed}个面板数据！` : "我超，所有转换都失败了，牛逼！"}\n${empty ? `没有面板数据的有${empty}个` : "没发现没有面板数据的用户"}！\n${fail ? `转换失败的有${fail}个` : "没有出现转换失败(好耶)"}！\n本次转换总计用时${((TimeEnd - TimeStart) / 1000).toFixed(1)}s~${fail ? "\n为了避免过量信息导致风控，请自行查看后台日志喵~" : ""}`)
+    console.log("以下是本次转换的报错信息（如果有的话）\n" + ErrorList)
   }
   async M2G_query() {
     if (!fs.existsSync(GspanelPath)) {
@@ -210,18 +228,24 @@ export class MiaoToGspanel extends plugin {
     let qq2uid = JSON.parse(fs.readFileSync(GspanelPath.concat("../qq-uid.json")))
     qq2uid[qq] = uid
     fs.writeFileSync(await GspanelPath.concat("../qq-uid.json"), JSON.stringify(qq2uid))
-    if (result) this.reply(`成功转换UID${uid}的面板数据~`)
-    else this.reply(`转换UID${uid}的面板数据失败了orz`)
+    if (result == true) this.reply(`成功转换UID${uid}的面板数据~`)
+    else this.reply(`转换UID${uid}的面板数据失败了orz，报错信息：\n${result}`)
   }
   async M2G(uid) {
     try {
       //调用前已经判断过该uid一定有面板数据，并且所有路径无误，所以接下来就是修改面板数据以适配Gspanel
-      //修正面板数据，在对应目录生成文件。返回值表示处理结果(true：转换成功，false：转换失败)
+      //修正面板数据，在对应目录生成文件。返回值表示处理结果(true：转换成功，其他返回值：转换失败。失败时返回报错内容以便查看日志。)
       let Miao = JSON.parse(fs.readFileSync(MiaoPath.concat(`${uid}.json`)))
       let Gspanel = { "avatars": [], "next": Math.floor(Miao._profile / 1000) }
       for (let i in Miao.avatars) {
         //MiaoChar：喵喵面板的具体一个角色的数据
         let MiaoChar = Miao.avatars[i]
+        //如果没有武器数据，则跳过该面板。（这个理论上应该都有啊。。不知道为啥会出现没有武器的我靠）
+        if (MiaoChar.weapon.name == undefined) {
+          console.log(pluginINFO.concat(`UID${uid}${MiaoChar.name}没有武器信息故跳过，以下是他${MiaoChar.name}的武器信息：`))
+          console.log(MiaoChar.weapon)
+          continue
+        }
         //如果数据来源是米游社，那根本就不会有带圣遗物的面板数据，取消执行。Miao的数据似乎有点问题，米游社来源可能误标enka，需要后期检查。
         if (MiaoChar._source == "mys") continue;
         //用参数NoData标记本面板是否有足量数据（具体来讲，是否有圣遗物详情）
@@ -555,7 +579,7 @@ export class MiaoToGspanel extends plugin {
             }
             result.fightProp[calc.prop] += calc.value
           }
-          result.relics[result.relics.length] = artis
+          result.relics.push(artis)
         }
         if (NoData) {
           //如果没有圣遗物详细数据，则跳过该面板。
@@ -583,7 +607,7 @@ export class MiaoToGspanel extends plugin {
 
         //SKIP：relics[i].calc relicCalc damage
 
-        Gspanel.avatars[Gspanel.avatars.length] = result
+        Gspanel.avatars.push(result)
       }
 
 
@@ -592,7 +616,7 @@ export class MiaoToGspanel extends plugin {
       return true
     } catch (e) {
       console.log(logger.red(`${pluginINFO}UID${uid}报错：\n${e}`))
-      return false
+      return `\n${pluginINFO}在处理UID${uid}的数据时：\n${logger.red(e)}`
     }
   }
 
@@ -607,6 +631,21 @@ export class MiaoToGspanel extends plugin {
         message: `#转换全部面板\n将所有喵喵面板转换为Gspanel面板。`,
         user_id: Bot.uin,
         nickname: "转换全部面板"
+      },
+      {
+        message: `#转换面板插件更新\n从gitee获取最新版本，安装到${ThisFilePath}。没有做处理失败的逻辑，如果失败请手动前往插件页更新。`,
+        user_id: Bot.uin,
+        nickname: "原地更新"
+      },
+      {
+        message: `本插件地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/，github同用户名项目名，可能会保持更新。如遇bug请先尝试更新插件（发送#转换面板插件更新），没有解决请反馈到issue。\n本地版本最后一次编辑时间：${最近一次编辑时间}`,
+        user_id: Bot.uin,
+        nickname: "插件地址"
+      },
+      {
+        message: `如需更改配置，请手动更改插件本体。当前配置：\n插件数据：${resource}\n\n喵喵面板位置：${MiaoPath}\n\nGspanel面板位置：${GspanelPath}\n\n喵喵资料位置：${MiaoResourecePath}\n\n一般需要手动配置Gspanel面板位置，具体位置请参考自己的py插件的配置。具体来讲，使用自己的Yunzai/plugins/py-plugin/config.yaml里的resources_dir的路径，加上cache即可。`,
+        user_id: Bot.uin,
+        nickname: "如需更改请手动更改"
       },
       {
         message: `#武器数据更新`,
@@ -632,16 +671,6 @@ export class MiaoToGspanel extends plugin {
         message: `#圣遗物主词条更新`,
         user_id: Bot.uin,
         nickname: "如出现圣遗物主词条大小错误"
-      },
-      {
-        message: `本插件地址：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/，github同用户名项目名，可能会保持更新。如遇bug请先检查是否有更新，没有解决请反馈到issue。`,
-        user_id: Bot.uin,
-        nickname: "插件地址"
-      },
-      {
-        message: `如需更改配置，请手动更改插件本体。当前配置：\n插件数据：${resource}\n\n喵喵面板位置：${MiaoPath}\n\nGspanel面板位置：${GspanelPath}\n\n喵喵资料位置：${MiaoResourecePath}\n\n一般需要手动配置Gspanel面板位置，具体位置请参考自己的py插件的配置。具体来讲，使用自己的Yunzai/plugins/py-plugin/config.yaml里的resources_dir的路径，加上cache即可。`,
-        user_id: Bot.uin,
-        nickname: "如需更改请手动更改"
       }
     ]
     if (!this.e.isMaster) {
@@ -733,7 +762,7 @@ export class MiaoToGspanel extends plugin {
       for (let i in ori) {
         if (ori[i].mainCostItemId > 1000) continue
         let element = transElem[ori[i].mainCostItemId]
-        Temp_PlayerElem_To_ConsIconName[element][Temp_PlayerElem_To_ConsIconName[element].length] = ori[i].icon
+        Temp_PlayerElem_To_ConsIconName[element].push(ori[i].icon)
       }
       fs.writeFileSync(resource.concat("PlayerElem_To_ConsIconName.json"), JSON.stringify(Temp_PlayerElem_To_ConsIconName))
       PlayerElem_To_ConsIconName = Temp_PlayerElem_To_ConsIconName
@@ -926,6 +955,28 @@ export class MiaoToGspanel extends plugin {
       let TimeEnd = await new Date().getTime()
       this.reply(`更新失败了呜呜呜，请检查后台日志确认原因。用时${TimeEnd - TimeStart}ms`)
     }
+  }
+  async selfUpdate() {
+    //#转换面板插件更新
+    //数据来源：https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/MiaoToGspanel.js
+    let response = await fetch("https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/MiaoToGspanel.js")
+    response = await response.text()
+    let LastEditTime = response.indexOf("最近一次编辑时间")
+    if (LastEditTime == -1) {
+      this.reply("疑似作者跑路了，建议手动访问https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel以确认具体情况。")
+    } else {
+      console.log(LastEditTime)
+      //TODO：LastEditTime
+      if (LastEditTime == 最近一次编辑时间) {
+        this.reply("当前已经是最新版本了，如需强制更新请发送#转换面板插件强制更新。")
+      } else {
+        this.forceSelfUpdate()
+      }
+    }
+  }
+  async forceSelfUpdate() {
+    //TODO：LastEditTime
+    // fs.writeFileSync(ThisFilePath, response)
   }
 }
 async function download(url, filename) {
