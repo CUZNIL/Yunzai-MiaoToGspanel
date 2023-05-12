@@ -4,7 +4,7 @@
 发送#面板通用化帮助 来获取详细帮助~
 //*/
 
-let 最近一次编辑时间 = "2023年5月12日16:58:48"
+let 最近一次编辑时间 = "2023年5月12日17:16:19"
 
 let resource = "resources/MiaoToGspanel/"
 let MiaoPath = "data/UserData/"
@@ -965,18 +965,22 @@ export class MiaoToGspanel extends plugin {
     if (LastEditTime == -1) {
       this.reply("疑似作者跑路了，建议手动访问https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel以确认具体情况。")
     } else {
-      console.log(LastEditTime)
-      //TODO：LastEditTime
+      LastEditTime = response.indexOf(`"`, LastEditTime) + 1
+      let right = response.indexOf(`"`, LastEditTime)
+      LastEditTime = await response.substring(LastEditTime, right)
       if (LastEditTime == 最近一次编辑时间) {
         this.reply("当前已经是最新版本了，如需强制更新请发送#转换面板插件强制更新。")
       } else {
-        this.forceSelfUpdate()
+        this.reply("有较新版本，即将更新到" + ThisFilePath)
+        fs.writeFileSync(ThisFilePath, response)
       }
     }
   }
   async forceSelfUpdate() {
-    //TODO：LastEditTime
-    // fs.writeFileSync(ThisFilePath, response)
+    let response = await fetch("https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/MiaoToGspanel.js")
+    response = await response.text()
+    this.reply("即将强制更新到" + ThisFilePath)
+    fs.writeFileSync(ThisFilePath, response)
   }
 }
 async function download(url, filename) {
