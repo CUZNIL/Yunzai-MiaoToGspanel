@@ -4,7 +4,7 @@
 发送#面板通用化帮助 来获取详细帮助~
 //*/
 
-let 最近一次编辑时间 = "2023年5月12日17:16:19"
+let 最近一次编辑时间 = "2023年5月23日16:28:24"
 
 let resource = "resources/MiaoToGspanel/"
 let MiaoPath = "data/UserData/"
@@ -30,6 +30,7 @@ let redisStart = "Yz:genshin:mys:qq-uid:"
 let errorTIP = "请仔细阅读README，你没有正确配置！可能是以下原因：\n1.你不是通过py-plugin安装的nonebot-plugin-gspanel\n2.你没有正确配置nonebot-plugin-gspanel\n3.你没有正确配置本js插件\n。。。\n为解决本问题请自行阅读https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel"
 let pluginINFO = "【MiaoToGspanel插件】"
 let thisRepoDownload = "https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/download/"
+let thisRepoDownloadAtGithub = "https://ghproxy.com/https://raw.githubusercontent.com/CUZNIL/Yunzai-MiaoToGspanel/master/download/"
 let GenshinDataRepoDownload = "https://gitlab.com/Dimbreath/AnimeGameData/-/raw/master/ExcelBinOutput/"
 if (!fs.existsSync(resource)) {
   console.log(`${pluginINFO}检测到没有文件夹${resource}！即将创建该文件夹用于存放插件运行必要的数据！`)
@@ -554,6 +555,14 @@ export class MiaoToGspanel extends plugin {
             },
             "icon": `UI_RelicIcon_${dataRelicSet[dataRelicSet[MiaoArtis.name]]}_${trans[j]}`
           }
+
+          if (artis.sub[3].prop == undefined) {
+            //如果没有第四个词条的话，可能需要主动删去
+            artis.sub[3] = undefined
+            artis.calc.sub[3] = undefined
+
+          }
+
           if (result.relicSet[artis.setName])
             result.relicSet[artis.setName]++
           else
@@ -985,9 +994,15 @@ export class MiaoToGspanel extends plugin {
 }
 async function download(url, filename) {
   //下载必要资源到resource文件夹
-  let response = `${url}${filename}`
+  let response = url + filename
   response = await fetch(response)
   response = await response.text()
+  if (await response.startsWith("The content")) {
+    console.log(pluginINFO + logger.red(`喜报！内容被gitee杀了！试一下能不能从github获取。如果一会还是报错就提交issue吧！`))
+    response = await thisRepoDownloadAtGithub + filename
+    response = await fetch(response)
+    response = await response.text()
+  }
   fs.writeFileSync(resource + filename, response)
 }
 async function mkdir(path) {
