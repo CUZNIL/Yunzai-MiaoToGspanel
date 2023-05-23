@@ -4,7 +4,7 @@
 发送#面板通用化帮助 来获取详细帮助~
 //*/
 
-let 最近一次编辑时间 = "2023年5月23日17:16:58"
+let 最近一次编辑时间 = "2023年5月23日17:19:33"
 
 let resource = "resources/MiaoToGspanel/"
 let MiaoPath = "data/UserData/"
