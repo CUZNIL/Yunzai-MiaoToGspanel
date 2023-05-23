@@ -4,7 +4,7 @@
 发送#面板通用化帮助 来获取详细帮助~
 //*/
 
-let 最近一次编辑时间 = "2023年5月23日17:14:01"
+let 最近一次编辑时间 = "2023年5月23日17:16:58"
 
 let resource = "resources/MiaoToGspanel/"
 let MiaoPath = "data/UserData/"
@@ -525,10 +525,10 @@ export class MiaoToGspanel extends plugin {
           }
           for (let index in MiaoArtis.attrs) {
             //将非空词条写入，无视空词条。
-            // if (MiaoArtis.attr[index].key == undefined) {
-            //   //如果当前位置已经出现undefined，则后面也都是undefined，无需重复判断。
-            //   break
-            // }
+            if (MiaoArtis.attrs[index].key == undefined) {
+              //如果当前位置已经出现undefined，则后面也都是undefined，无需重复判断。
+              break
+            }
             artis.sub[index] = {
               "prop": trans[MiaoArtis.attrs[index].key],
               "value": MiaoArtis.attrs[index].value
