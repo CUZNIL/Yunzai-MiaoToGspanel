@@ -4,7 +4,7 @@
 发送#面板通用化帮助 来获取详细帮助~
 //*/
 
-let 最近一次编辑时间 = "2023年5月23日16:43:07"
+let 最近一次编辑时间 = "2023年5月23日17:07:14"
 
 let resource = "resources/MiaoToGspanel/"
 let MiaoPath = "data/UserData/"
@@ -509,22 +509,6 @@ export class MiaoToGspanel extends plugin {
               "value": MiaoArtis.main.value
             },
             "sub": [
-              {
-                "prop": trans[MiaoArtis.attrs[0].key],
-                "value": MiaoArtis.attrs[0].value
-              },
-              {
-                "prop": trans[MiaoArtis.attrs[1].key],
-                "value": MiaoArtis.attrs[1].value
-              },
-              {
-                "prop": trans[MiaoArtis.attrs[2].key],
-                "value": MiaoArtis.attrs[2].value
-              },
-              {
-                "prop": trans[MiaoArtis.attrs[3].key],
-                "value": MiaoArtis.attrs[3].value
-              }
             ],
             "calc": {
               //你好！评分部分我先暂时搁置了！因为我个人只需要队伍伤害，该功能不需要评分。
@@ -533,29 +517,24 @@ export class MiaoToGspanel extends plugin {
               "nohit": 45,
               "main": 77.7,
               "sub": [
-                {
-                  "style": "great",
-                  "goal": 6.6
-                },
-                {
-                  "style": "use",
-                  "goal": 5.5
-                },
-                {
-                  "style": "unuse",
-                  "goal": 4.4
-                },
-                {
-                  "style": "great",
-                  "goal": 3.3
-                }
               ],
               "main_pct": 100.0,
               "total_pct": 98.7
             },
             "icon": `UI_RelicIcon_${dataRelicSet[dataRelicSet[MiaoArtis.name]]}_${trans[j]}`
           }
-
+          for (let index in MiaoArtis.attrs) {
+            //将非空词条写入，无视空词条。
+            if (MiaoArtis.attr[index].key == undefined) {
+              //如果当前位置已经出现undefined，则后面也都是undefined，无需重复判断。
+              break
+            }
+            artis.sub[index] = {
+              "prop": trans[MiaoArtis.attrs[index].key],
+              "value": MiaoArtis.attrs[index].value
+            }
+            artis.calc.sub[index] = { "style": "great", "goal": 6.6 }
+          }
           if (result.relicSet[artis.setName])
             result.relicSet[artis.setName]++
           else
