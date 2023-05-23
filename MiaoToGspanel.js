@@ -4,7 +4,7 @@
 发送#面板通用化帮助 来获取详细帮助~
 //*/
 
-let 最近一次编辑时间 = "2023年5月23日16:28:24"
+let 最近一次编辑时间 = "2023年5月23日16:43:07"
 
 let resource = "resources/MiaoToGspanel/"
 let MiaoPath = "data/UserData/"
@@ -554,13 +554,6 @@ export class MiaoToGspanel extends plugin {
               "total_pct": 98.7
             },
             "icon": `UI_RelicIcon_${dataRelicSet[dataRelicSet[MiaoArtis.name]]}_${trans[j]}`
-          }
-
-          if (artis.sub[3].prop == undefined) {
-            //如果没有第四个词条的话，可能需要主动删去
-            artis.sub[3] = undefined
-            artis.calc.sub[3] = undefined
-
           }
 
           if (result.relicSet[artis.setName])
