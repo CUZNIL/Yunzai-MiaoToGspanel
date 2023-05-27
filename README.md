@@ -82,12 +82,11 @@ curl -O https://gitee.com/CUZNIL/Yunzai-MiaoToGspanel/raw/master/MiaoToGspanel.j
 
 ![输入图片说明](download/pic/wqdqfe.png)
 
-
-
 # 遇到其他问题/需要联系我/需要使用Bot
 
 群号 **638077675** 
 
 答案  **火花骑士** 
 
-[![群](https://gitee.com/CUZNIL/Yunzai-install/raw/master/download/README_pictures/QQ%E7%BE%A4.png)](http://jq.qq.com/?_wv=1027&k=tqiOtCVc)
+
+[![群](download/pic/qqgroupimage.png)](http://jq.qq.com/?_wv=1027&k=tqiOtCVc)
