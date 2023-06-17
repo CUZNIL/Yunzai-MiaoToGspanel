@@ -1,3 +1,5 @@
+# 相关功能和后续维护已迁移到[panel-plugin](https://gitee.com/yunzai-panel/panel-plugin)，不会删库但是建议尽快迁移。
+
 # 云崽Bot面板通用化插件.js
 
 ### 介绍
